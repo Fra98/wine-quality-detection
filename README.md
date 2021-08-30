@@ -1,2 +1,1 @@
-# wine-quality-detection
- Machine Learning project for wine quality detection
+# Wine Quality Detection
