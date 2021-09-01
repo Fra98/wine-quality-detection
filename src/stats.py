@@ -1,42 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
-import dataset as db
-
-
-def plot_histograms(D, L, prefix='original'):
-    # Matrix slices selecting only attribute of a specific label
-    D0 = D[:, L==0]     # LABEL = 0
-    D1 = D[:, L==1]     # LABEL = 1
-
-    for idxA in range(db.NUM_ATTR):
-        plt.figure()
-        plt.xlabel(db.ATTRIBUTES[idxA])
-        plt.hist(D0[idxA, :], bins = 50, density = True, alpha = 0.6, label = db.LABELS[0])
-        plt.hist(D1[idxA, :], bins = 50, density = True, alpha = 0.6, label = db.LABELS[1])
-        plt.legend()
-        plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-        plt.savefig(f'./src/plots/hist_{prefix}_{idxA}.png') 
-    #plt.show()
-
-
-def plot_scatter(D, L, attr1, attr2):
-    # Matrix slices selecting only attribute of a specific label
-    D0 = D[:, L==0]     # LABEL = 0
-    D1 = D[:, L==1]     # LABEL = 1
-    
-    if attr1 == attr2:
-        exit(-1)
-
-    plt.figure()
-    plt.xlabel(db.ATTRIBUTES[attr1])
-    plt.ylabel(db.ATTRIBUTES[attr2])
-    plt.scatter(D0[attr1, :], D0[attr2, :], label = db.LABELS[0])
-    plt.scatter(D1[attr1, :], D1[attr2, :], label = db.LABELS[1]) 
-    plt.legend()
-    plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-    plt.savefig(f'./src/plots/scatter_{attr1}_{attr2}.png') 
-    #plt.show()
+from utils import mrow, mcol
+from plot import plot_config, plot_histograms, plot_scatter, plot_pearsonCorrelationMatrix
+from dataset import load_db
 
 
 def center_data(D):
@@ -59,16 +26,41 @@ def covarianceMatrix(D):
 
     return C
 
+def betweenClassCovariance(D, L, K):
+    N = D.shape[1]  # total number of samples
+    n = D.shape[0]  # number of dimensions
+
+    mu = D.mean(1)
+    mu = mcol(mu)
+
+    S_B = np.zeros((n, n))
+    for c in range(K):
+        D_c = D[:, L == c]              # samples of class c
+        n_c = D_c.shape[1]              # number of samples of class c
+        mu_c = D_c.mean(axis=1)         # mean of the class
+        mu_c = mcol(mu_c)
+        S_B += n_c * np.dot(mu_c-mu, (mu_c-mu).T)
+    S_B = (1/N) * S_B
+
+    return S_B
+
+
+def withinClassCovariance(D, L, K):
+    N = D.shape[1]  # total number of samples
+    n = D.shape[0]  # number of dimensions
+
+    S_W = np.zeros((n, n))
+    for c in range(K):
+        D_c = D[:, L==c]                # samples of class c
+        n_c = D_c.shape[1]              # number of samples of class c
+        C_c = covarianceMatrix(D_c)     # covariance matrix of class c
+        S_W += n_c * C_c
+    S_W = (1/N) * S_W 
+
+    return S_W
+
 def pearsonCorrelationMatrix(D):
     return np.corrcoef(D)
-
-def plot_pearsonCorrelationMatrix(PCC):
-    plt.figure()
-    plt.title('Pearson Correlation Coefficient Heatmap')
-    plt.imshow(PCC, cmap='Greys', interpolation='nearest')
-    plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-    plt.savefig('./src/plots/pearson.png') 
-    #plt.show()
 
 def gauss_data(D):            
     DG = np.copy(D)    
@@ -82,20 +74,13 @@ def gauss_data(D):
 
 def main():
     # LOADING DATABASE
-    D, L = db.load_db('./src/dataset/Train.txt')
-
-    # PLOTTING
+    D, L = load_db()
 
     # UI config
-    plt.rc('font', size=16)
-    plt.rc('xtick', labelsize=16)
-    plt.rc('ytick', labelsize=16)
+    plot_config()
     
     plot_histograms(D, L)
     # plot_scatter(D, L, 5, 3)
-
-
-    # STATISTICS
 
     # Class distribution
     N_1 = len(L[L==1])

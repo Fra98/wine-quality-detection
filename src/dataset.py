@@ -1,9 +1,15 @@
 import numpy as np
 
+# Number of classes
+NUM_CLASSES = 2
+
 LABELS = {
     0 : "Low Quality",
     1 : "High Quality"
 }
+
+# Number of attributes
+NUM_ATTR = 11
 
 ATTRIBUTES = {
     0 : "fixed acidity",
@@ -19,17 +25,21 @@ ATTRIBUTES = {
     10 : "alcohol"
 }
 
-# Number of attributes
-NUM_ATTR = 11
-
 
 ''' 
 LOADING WINES DATABASE
+Argument:
+    -train: boolean -> TRUE : train samples, FALSE : test samples 
 Return:
     -D = 10D array -> Column vectors
     -L = 1D array -> labels (0 or 1)
 '''
-def load_db(fileName):
+def load_db(train=True):
+    if train:
+        fileName = './src/dataset/Train.txt'
+    else:
+        fileName = './src/dataset/Test.txt'
+
     list_attributes = []
     list_labels = []
 
