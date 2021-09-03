@@ -81,7 +81,7 @@ def main(D,L, title):
     print("Tied Diag-Cov ",MPTCNB.getDCFNorm(LET, 2))
 
 if __name__ == "__main__":
-    D, L = db.load_db('./src/dataset/Train.txt')
+    D, L = db.load_db()
     main(D, L, "Raw Features")
     main(D, L, "Gaussianized Features")
 
@@ -133,8 +133,6 @@ Full-Cov  1.0468500941892482
 Diag-Cov  1.655430372409796
 Tied Full-Cov  0.9903637154035647
 Tied Diag-Cov  1.6173108969714538
-
-
 
 '''
 

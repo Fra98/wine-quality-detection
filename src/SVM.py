@@ -53,62 +53,79 @@ class SVMClass:
         fun3 = self.C*numpy.sum(numpy.maximum(zeros, fun2))                                
         return fun1 +fun3
 
+
 class SVMKernClass:
-    def __init__(self, DTR, LTR, C, kf):  
-        self.K=K
-        self.kf=kf                
+    def __init__(self, DTR, LTR, C, K, kf):
+        self.K = K
+        k_values = numpy.ones([1, DTR.shape[1]]) * K
+        self.D = numpy.vstack((DTR, k_values))
         self.DTR = DTR
         self.LTR = LTR
-        self.Z  = mcol(2*LTR-1)
+        self.K = K
+        self.kf = kf
+        self.DTR = DTR
+        self.LTR = LTR
+        self.Z = mcol(2 * LTR - 1)
         self.C = C
-        self.bounds = [(0,C)] * LTR.size        
-        self.H=self.Z * self.Z.T         
+
+        self.bounds = [(0, C)] * LTR.size
+
+        self.H = self.Z.T * self.Z * 1.0
+        self.G = numpy.zeros(self.H.shape)
+
         for i in range(self.H.shape[0]):
             for j in range(self.H.shape[1]):
-                self.H[i][j]=self.H[i][j]*kf(DTR.T[i],DTR.T[j])        
-                
-                    
+                self.G[i][j] = kf(self.D.T[i], self.D.T[j])
+        self.H = self.H * self.G
 
-    def svm(self, a):         
-        elle = numpy.ones(a.size) 
-        f1 = 0.5*numpy.dot(numpy.dot(a.T,self.H),a)
-        f2 = numpy.dot(a.T,mcol(elle))        
-        v = numpy.dot(self.H,a)-elle                                        
-        return f1-f2, v.T
-   
+    def svm(self, a):
+        elle = numpy.ones(a.size)
+        f1 = 0.5 * numpy.dot(numpy.dot(a.T, self.H), a)
+        f2 = numpy.dot(a.T, elle.T)
+        v = numpy.dot(self.H, a) - elle
+        return f1 - f2, v.T
+
     def computeResult(self, x0):
-        (aopt,fr,d) = scipy.optimize.fmin_l_bfgs_b(self.svm, approx_grad=False, x0=x0, iprint=0, bounds=self.bounds, factr=1.0)                                        
+        (aopt, fr, d) = scipy.optimize.fmin_l_bfgs_b(self.svm, approx_grad=False, x0=x0, iprint=0, bounds=self.bounds,
+                                                     factr=1.0)
         self.aopt = aopt
         return aopt
-    
-    def computeScore(self,xt):                          
-        scores = numpy.zeros([xt.shape[1],1])        
-        for i in range(xt.shape[1]):            
-            for j in range(self.DTR.shape[1]):
-                scores[i]=scores[i]+self.aopt[j]*self.Z[j]*self.kf(self.DTR.T[j],xt.T[i])        
-        scores=mrow(scores)
-        classes = 1*(scores>0)        
-        return scores[0], classes[0]
-    
-    def compute_primal_loss(self,xt,lt):
-        W = mcol(self.W)  
-        Z = mcol(2*lt-1)
-        [scores, classes] = self.computeScore(xt)        
-        fun1= 0.5 * (W*W).sum()                   
-        fun2 = 1-Z*scores        
-        zeros = numpy.zeros(fun2.shape)
-        fun3 = self.C*numpy.sum(numpy.maximum(zeros, fun2))                                
-        return fun1 +fun3       
 
-def POLY_F(d,K,c):
-    def kf(xi,xj):                
-        return (numpy.dot(xi.T,xj)+c)**d+K
+    def computeScore(self, xt):
+        k_values = numpy.ones([1, xt.shape[1]]) * self.K
+        xt = numpy.vstack((xt, k_values))
+        scores = numpy.zeros(xt.shape[1])
+
+        for i in range(xt.shape[1]):
+            for j in range(self.D.shape[1]):
+                scores[i] += self.aopt[j] * self.Z[j] * self.kf(self.D.T[j], xt.T[i])
+        classes = 1 * (scores > 0)
+
+        return scores.T, classes.T
+
+    def compute_primal_loss(self, xt, lt):
+        W = mcol(self.W)
+        Z = mcol(2 * lt - 1)
+        [scores, classes] = self.computeScore(xt)
+        fun1 = 0.5 * (W * W).sum()
+        fun2 = 1 - Z * scores
+        zeros = numpy.zeros(fun2.shape)
+        fun3 = self.C * numpy.sum(numpy.maximum(zeros, fun2))
+        return fun1 + fun3
+
+
+def POLY_F(d, K, c):
+    def kf(xi, xj):
+        return (numpy.dot(xi.T, xj) + c) ** d + K
+
     return kf
 
-def RBF_F(lam,K):
-    def kf(xi,xj):          
-        norm=((xi-xj)*(xi-xj)).sum()
-        return numpy.exp(-lam*norm)
+
+def RBF_F(lam, K):
+    def kf(xi, xj):
+        norm = numpy.dot(numpy.subtract(xi, xj).T, numpy.subtract(xi, xj))
+        return numpy.exp(-lam * norm) + K
+
     return kf
 
 
