@@ -56,26 +56,19 @@ class SVMClass:
 
 class SVMKernClass:
     def __init__(self, DTR, LTR, C, K, kf):
-        self.K = K
-        k_values = numpy.ones([1, DTR.shape[1]]) * K
-        self.D = numpy.vstack((DTR, k_values))
         self.DTR = DTR
         self.LTR = LTR
+        self.C = C
         self.K = K
         self.kf = kf
-        self.DTR = DTR
-        self.LTR = LTR
-        self.Z = mcol(2 * LTR - 1)
-        self.C = C
-
         self.bounds = [(0, C)] * LTR.size
-
+        self.Z = mcol(2 * LTR - 1)
+        
         self.H = self.Z.T * self.Z * 1.0
         self.G = numpy.zeros(self.H.shape)
-
         for i in range(self.H.shape[0]):
             for j in range(self.H.shape[1]):
-                self.G[i][j] = kf(self.D.T[i], self.D.T[j])
+                self.G[i][j] = kf(self.DTR.T[i], self.DTR.T[j])
         self.H = self.H * self.G
 
     def svm(self, a):
@@ -92,26 +85,14 @@ class SVMKernClass:
         return aopt
 
     def computeScore(self, xt):
-        k_values = numpy.ones([1, xt.shape[1]]) * self.K
-        xt = numpy.vstack((xt, k_values))
         scores = numpy.zeros(xt.shape[1])
 
         for i in range(xt.shape[1]):
-            for j in range(self.D.shape[1]):
-                scores[i] += self.aopt[j] * self.Z[j] * self.kf(self.D.T[j], xt.T[i])
+            for j in range(self.DTR.shape[1]):
+                scores[i] += self.aopt[j] * self.Z[j] * self.kf(self.DTR.T[j], xt.T[i])
         classes = 1 * (scores > 0)
 
         return scores.T, classes.T
-
-    def compute_primal_loss(self, xt, lt):
-        W = mcol(self.W)
-        Z = mcol(2 * lt - 1)
-        [scores, classes] = self.computeScore(xt)
-        fun1 = 0.5 * (W * W).sum()
-        fun2 = 1 - Z * scores
-        zeros = numpy.zeros(fun2.shape)
-        fun3 = self.C * numpy.sum(numpy.maximum(zeros, fun2))
-        return fun1 + fun3
 
 
 def POLY_F(d, K, c):
