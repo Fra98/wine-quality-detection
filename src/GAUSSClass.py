@@ -56,9 +56,8 @@ class GAUSSClass:
     def logpdf_GAU_ND(self,x,mu,Eps):
         M = x.shape[0]
         xmu_2 = x - mu
-        detCF, detC = numpy.linalg.slogdet(Eps)
         firstTerm = -M * 0.5 * numpy.log(numpy.pi * 2)
-        secondTerm = -0.5 * numpy.log(abs(detC))
+        secondTerm = -0.5 * numpy.linalg.slogdet(Eps)[1]
         exponent = -0.5 * (xmu_2.T.dot(numpy.linalg.inv(Eps)).dot(xmu_2))
         return numpy.diag(firstTerm + secondTerm + exponent)
 
@@ -68,8 +67,7 @@ class GAUSSClass:
         LC=numpy.zeros([2,DTE.shape[1]])
         LC[0]=logN0+numpy.log(p)
         LC[1]=logN1+numpy.log(1-p)
-        L=numpy.max(LC, axis=0)
-        LOGFX=scs.logsumexp(LC-L, axis=0)+L
+        LOGFX=scs.logsumexp(LC, axis=0)
         LOGP=numpy.zeros([2,DTE.shape[1]])
         LOGP[0]=LC[0]-LOGFX
         LOGP[1]=LC[1]-LOGFX
