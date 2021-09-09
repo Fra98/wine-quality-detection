@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import dataset as db
 import LOGRegression
-from MEASUREPrediction import MEASUREPrediction
+from MEASUREPrediction import MEASUREPrediction, showBayesPlot
 from utils import split_K_folds
 from stats import gauss_data
 
 K = 5   # number of folds cross-validation
 
-def compute_DCFMin(D, L, l, p, gauss=False):
+def compute_LLR_LTE(D, L, l, p, gauss=False):
     D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
     D = np.concatenate(D_SETS, axis=1)
     L = np.concatenate(L_SETS, axis=0)
@@ -29,17 +29,21 @@ def compute_DCFMin(D, L, l, p, gauss=False):
     
         S_i = np.dot(w.T, DE) + b
         S = np.hstack((S, S_i))
-    
+
+    return S, L
+
+
+def computeDCFMin(S,L,p):
     MP = MEASUREPrediction(p, 1.0, 1.0, S)
     MP.computeDCF(L, db.NUM_CLASSES)
     _, DCFMin = MP.getDCFMin()
-
     return DCFMin
 
 
-def main_find_best_lambda():
+
+def main_find_best_lambda(ptrain):
     D, L = db.load_db()
-    lambdas = np.logspace(-6,1)
+    lambdas = np.logspace(-6,1,10)
     N = lambdas.size                         
     minDCF1 = np.zeros(N)
     minDCF5 = np.zeros(N)
@@ -47,9 +51,12 @@ def main_find_best_lambda():
 
     i=0
     for l in lambdas:
-        minDCF1[i] = compute_DCFMin(D, L, l, 0.1)
-        minDCF5[i] = compute_DCFMin(D, L, l, 0.5)
-        minDCF9[i] = compute_DCFMin(D, L, l, 0.9)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        minDCF1[i] = computeDCFMin(LLR, LTE, 0.1)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        minDCF5[i] = computeDCFMin(LLR, LTE, 0.5)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        minDCF9[i] = computeDCFMin(LLR, LTE, 0.9)
         i=i+1
     
     plt.figure()
@@ -64,18 +71,29 @@ def main_find_best_lambda():
 
 def main_find_best_threshold():
     D, L = db.load_db()
-    
+
     # given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
     l=1e-4
 
-    print("mindcf (π = 0.1) ", compute_DCFMin(D, L, l, 0.1))
-    print("mindcf (π = 0.5) ", compute_DCFMin(D, L, l, 0.5))
-    print("mindcf (π = 0.9) ", compute_DCFMin(D, L, l, 0.9))
+    plt.figure()
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.1)
+    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1")
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.5)
+    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5")
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.9)
+    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9")
+    plt.legend()
+    plt.xlabel("thres")
+    plt.ylabel("DCF")
+    plt.show()
+
+
 
 
 if __name__ == "__main__":
-    # main_find_best_lambda()
-    main_find_best_threshold()
+    ptrain = 0.9
+    main_find_best_lambda(ptrain)
+    #main_find_best_threshold()
 
 '''
 OLD VALUES:
