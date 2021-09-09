@@ -1,87 +1,85 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 import dataset as db
 import LOGRegression
-import MEASUREPrediction
+from MEASUREPrediction import MEASUREPrediction
+from utils import split_K_folds
+from stats import gauss_data
 
-def split_db_2to1(D, L, seed=0):
-    nTrain = int(D.shape[1] * 4.0 / 5.0)
-    np.random.seed(seed)
-    idx = np.random.permutation(D.shape[1])
-    idxTrain = idx[0:nTrain]
-    idxTest = idx[nTrain:]
+K = 5   # number of folds cross-validation
 
-    DTR = D[:, idxTrain]
-    DTE = D[:, idxTest]
-    LTR = L[idxTrain]
-    LTE = L[idxTest]
-    return DTR, LTR, DTE, LTE
+def compute_DCFMin(D, L, l, p, gauss=False):
+    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
+    D = np.concatenate(D_SETS, axis=1)
+    L = np.concatenate(L_SETS, axis=0)
 
-def gauss(TD):
-    def gauss_func(D):
-        DG = np.copy(D)
-        for i in range(D.shape[0]):
-            for x in range(D.shape[1]):
-                summ = 1*(TD[i]>D[i][x])
-                DG[i][x] = (summ.sum()+1.0)/(TD.shape[1]+1.0)
-        DG = norm.ppf(DG)
-        return DG
-    return gauss_func
+    if gauss == True:
+        for i in range(K):
+            D_SETS[i] = gauss_data(D_SETS[i])
 
-def main(D,L,l,p):
-    LLR=0
-    LET=0
-    for i in range(4):
-        DT, LT, DE, LE = split_db_2to1(D, L, i)
-        '''
-        #uncomment this lines to get the gaussianized version
-        gauss_func = gauss(DT)
-        DT=gauss_func(DT)
-        DE = gauss_func(DE)
-        '''
+    S = []
+    for i in range(K):
+        DT = np.concatenate(D_SETS[:i] + D_SETS[i+1:], axis=1)
+        LT = np.concatenate(L_SETS[:i] + L_SETS[i+1:], axis=0)        
+        DE = D_SETS[i]
 
-        LogReg = LOGRegression.LOGREGClass(DT, LT, l, 0.5)
+        LogReg = LOGRegression.LOGREGClass(DT, LT, l, p)
         x0 = np.zeros(D.shape[0] + 1)
-        w, b, fr = LogReg.computeResult(x0)
-        if i==0:
-            LLR = np.dot(w.T, DE) + b
-            LET=LE
-        else:
-            LLR = np.hstack((LLR, np.dot(w.T, DE) + b ))
-            LET = np.hstack((LET, LE))
+        w, b, _ = LogReg.computeResult(x0)
+    
+        S_i = np.dot(w.T, DE) + b
+        S = np.hstack((S, S_i))
+    
+    MP = MEASUREPrediction(p, 1.0, 1.0, S)
+    MP.computeDCF(L, db.NUM_CLASSES)
+    _, DCFMin = MP.getDCFMin()
 
-    MP = MEASUREPrediction.MEASUREPrediction(p, 1.0, 1.0, LLR)
-    return MP.getDCFNorm(LET, 2)
+    return DCFMin
+
+
+def main_find_best_lambda():
+    D, L = db.load_db()
+    lambdas = np.logspace(-6,1)
+    N = lambdas.size                         
+    minDCF1 = np.zeros(N)
+    minDCF5 = np.zeros(N)
+    minDCF9 = np.zeros(N)
+
+    i=0
+    for l in lambdas:
+        minDCF1[i] = compute_DCFMin(D, L, l, 0.1)
+        minDCF5[i] = compute_DCFMin(D, L, l, 0.5)
+        minDCF9[i] = compute_DCFMin(D, L, l, 0.9)
+        i=i+1
+    
+    plt.figure()
+    plt.semilogx(lambdas, minDCF1, label='mindcf (π=0.1)')
+    plt.semilogx(lambdas, minDCF5, label='mindcf (π=0.5)')
+    plt.semilogx(lambdas, minDCF9, label='mindcf (π=0.9)')
+    plt.legend()
+    plt.xlabel("Lambda λ")
+    plt.ylabel("Min DCF")
+    plt.show()
+
+
+def main_find_best_threshold():
+    D, L = db.load_db()
+    
+    # given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
+    l=1e-4
+
+    print("mindcf (π = 0.1) ", compute_DCFMin(D, L, l, 0.1))
+    print("mindcf (π = 0.5) ", compute_DCFMin(D, L, l, 0.5))
+    print("mindcf (π = 0.9) ", compute_DCFMin(D, L, l, 0.9))
+
 
 if __name__ == "__main__":
-    D, L = db.load_db()
-    '''
-    #compute optimal lambda = 1e-5
-    minDCF1 = np.zeros([50])
-    minDCF5 = np.zeros([50])
-    minDCF9 = np.zeros([50])
-    i=0
-    for l in np.logspace(-6,1):
-        minDCF1[i] = main(D, L, l, 0.1)
-        minDCF5[i]=main(D, L, l, 0.5)
-        minDCF9[i] = main(D, L, l, 0.9)
-        i=i+1
-    plt.figure()
-    plt.semilogx(np.logspace(-6, 1), minDCF1, label='mindcf (π=0.1)')
-    plt.semilogx(np.logspace(-6, 1), minDCF5, label='mindcf (π=0.5)')
-    plt.semilogx(np.logspace(-6, 1), minDCF9, label='mindcf (π=0.9)')
-    plt.legend()
-    plt.show()
-    '''
-
-    #given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
-    l=1e-5
-    print("mindcf (π = 0.1) ", main(D, L, l, 0.1))
-    print("mindcf (π = 0.5) ", main(D, L, l, 0.5))
-    print("mindcf (π = 0.9) ", main(D, L, l, 0.9))
+    # main_find_best_lambda()
+    main_find_best_threshold()
 
 '''
+OLD VALUES:
+
 l = 1e-5
 
 Gaussianized Features

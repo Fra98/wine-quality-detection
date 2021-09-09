@@ -1,12 +1,7 @@
 import numpy
-from numpy.core.fromnumeric import argmax
 import scipy.special as scs
 
-def mcol(v):
-    return v.reshape((v.size, 1)) #giro per colonna il campione
-
-def mrow(v):
-    return v.reshape(1,v.size)
+from utils import mcol
 
 class GAUSSClass:
 
