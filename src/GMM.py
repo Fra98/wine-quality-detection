@@ -2,9 +2,8 @@ import numpy as np
 import scipy.special as scs
 import matplotlib.pyplot as plt
 import json
-from utils import mcol, mrow, split_db_2to1
+from utils import mcol, mrow, split_db_2to1, computeErrorRate
 from stats import GAU_mu_ML, covarianceMatrix
-from evaluation import computeErrorRate
 from dataset import load_db
 
 def save_gmm(gmm, filename):

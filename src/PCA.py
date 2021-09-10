@@ -1,5 +1,5 @@
 import numpy as np
-from stats import covarianceMatrix, plot_scatter
+from stats import covarianceMatrix
 from dataset import load_db
 
 def PCA(D, m):
@@ -8,7 +8,7 @@ def PCA(D, m):
 
 	if(n <= m):
 		print("Error: new dimensionality (m) is bigger or equal than original dimension")
-		return
+		exit()
 
 	# computing the covariance matrix C
 	C = covarianceMatrix(D)

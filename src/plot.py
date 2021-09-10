@@ -20,7 +20,7 @@ def plot_histograms(D, L, prefix='original'):
         plt.hist(D1[idxA, :], bins = 50, density = True, alpha = 0.6, label = db.LABELS[1])
         plt.legend()
         plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-        plt.savefig(f'./src/plots/hist_{prefix}_{idxA}.png') 
+        plt.savefig(f'./src/plots/stats/hist_{prefix}_{idxA}.png') 
     #plt.show()
 
 
@@ -39,7 +39,7 @@ def plot_scatter(D, L, attr1, attr2):
     plt.scatter(D1[attr1, :], D1[attr2, :], label = db.LABELS[1]) 
     plt.legend()
     plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-    plt.savefig(f'./src/plots/scatter_{attr1}_{attr2}.png') 
+    plt.savefig(f'./src/plots/stats/scatter_{attr1}_{attr2}.png') 
     #plt.show()
 
 
@@ -48,6 +48,6 @@ def plot_pearsonCorrelationMatrix(PCC):
     plt.title('Pearson Correlation Coefficient Heatmap')
     plt.imshow(PCC, cmap='Greys', interpolation='nearest')
     plt.tight_layout() # Use with non-default font size to keep axis label inside the figure
-    plt.savefig('./src/plots/pearson.png') 
+    plt.savefig('./src/plots/stats/pearson.png') 
     #plt.show()
 
