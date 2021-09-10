@@ -1,21 +1,28 @@
+import matplotlib.pyplot as plt 
 import numpy as np
 import dataset as db
 import GAUSSClass
-from MEASUREPrediction import MEASUREPrediction
+from MEASUREPrediction import MEASUREPrediction, showBayesPlot
 from utils import split_K_folds
 from stats import gauss_data
+from PCA import PCA
 
 ### Cross validation: 5 FOLDS
 K = 5 
 
-def main(D, L, p, gauss=False, model='MVG'):
+def compute_LLR_Gaussian(D, L, gauss=False, model='MVG', PCAm=None):
     D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
     D = np.concatenate(D_SETS, axis=1)
     L = np.concatenate(L_SETS, axis=0)
 
+    # PRE-PROCESSING
     if gauss == True:
         for i in range(K):
             D_SETS[i] = gauss_data(D_SETS[i])
+
+    if PCAm != None:
+        for i in range(K):
+            D_SETS[i] = PCA(D_SETS[i], PCAm)
 
     S = []
     for i in range(K):
@@ -36,92 +43,147 @@ def main(D, L, p, gauss=False, model='MVG'):
             print("Incorrect model name")
             exit()
 
-        S_i = GM.computeLLR(DE, 0.5)
+        S_i = GM.computeLLR(DE)
         S = np.hstack((S, S_i))
+
+    return S, L
+
+
+def compute_DCFMin(D, L, p, gauss=False, model='MVG', PCAm=None):
+    S, L = compute_LLR_Gaussian(D, L, gauss, model, PCAm)
     
     MP = MEASUREPrediction(p, 1.0, 1.0, S)
-    # MP.computeDCF(L, db.NUM_CLASSES)
-    # _, DCFMin = MP.getDCFMin()
-    DCFNorm = MP.getDCFNorm(L, db.NUM_CLASSES)
+    MP.computeDCF_FAST(L, db.NUM_CLASSES)
+    _, DCFMin = MP.getDCFMin()
 
     if gauss:
-        str = f'{model} (Gaussianized) ->'
+        name = f'{model} (Gaussianized) ->'
     else:
-        str = f'{model} (Raw) ->'
+        name = f'{model} (Raw) ->'
 
-    # print(str, "DCFMin:", DCFMin)
-    print(str, "DCFNorm:", DCFNorm)
+    print(name, "DCFMin:", DCFMin)
 
 
-if __name__ == "__main__":
+
+def main_DCFMin():
     D, L = db.load_db()
 
-    main(D, L, 0.5, gauss=False, model='MVG')
-    main(D, L, 0.5, gauss=False, model='NBG')
-    main(D, L, 0.5, gauss=False, model='TCG')
-    main(D, L, 0.5, gauss=False, model='TCNB')
-    main(D, L, 0.5, gauss=True,  model='MVG')
-    main(D, L, 0.5, gauss=True,  model='NBG')
-    main(D, L, 0.5, gauss=True,  model='TCG')
-    main(D, L, 0.5, gauss=True,  model='TCNB')
+    P = [0.5, 0.1, 0.9]
+    for p in P:
+        print("******* Pt =", p, "********")
+        # Raw
+        compute_DCFMin(D, L, p, gauss=False, model='MVG')
+        compute_DCFMin(D, L, p, gauss=False, model='NBG')
+        compute_DCFMin(D, L, p, gauss=False, model='TCG')
+        compute_DCFMin(D, L, p, gauss=False, model='TCNB')
 
+        # Gaussianized
+        compute_DCFMin(D, L, p, gauss=True,  model='MVG')
+        compute_DCFMin(D, L, p, gauss=True,  model='NBG')
+        compute_DCFMin(D, L, p, gauss=True,  model='TCG')
+        compute_DCFMin(D, L, p, gauss=True,  model='TCNB')
+
+        # PCA Gaussianized
+        compute_DCFMin(D, L, p, gauss=True,  model='MVG', PCAm=10)
+        compute_DCFMin(D, L, p, gauss=True,  model='TCG', PCAm=10)
+
+        print()
+
+
+def main_BayesPlot():
+    D, L = db.load_db()
+
+    plt.figure()
+    # 1
+    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=False, model='MVG')
+    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Raw")
+    print("minDCF:", minDCF)
+    print("PI =", PI)
+    MP[0].showStatsByThres(PI,LTE,2)
+
+    # 2
+    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=False, model='TCG')
+    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Raw")
+    print("minDCF:", minDCF)
+    print("PI =", PI)
+    MP[0].showStatsByThres(PI,LTE,2)
+
+    #3
+    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=True, model='MVG')
+    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Gauss")
+    print("minDCF:", minDCF)
+    print("PI =", PI)
+    MP[0].showStatsByThres(PI,LTE,2)
+
+    #4
+    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=True, model='TCG')
+    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Gauss")
+    print("minDCF:", minDCF)
+    print("PI =", PI)
+    MP[0].showStatsByThres(PI,LTE,2)
+
+    plt.title('MinDCF and ActDCF comparison between different models')
+    plt.savefig('./random.png')
+    plt.show()
+
+
+def main_evaluation():
+    D, L = db.load_db(False)
+
+    plt.figure()
+    LLR, LTE = compute_LLR_Gaussian(D, L, gauss=True, model='MVG')
+    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Gauss")
+    print("minDCF:", minDCF)
+    print("PI =", PI)
+    MP[0].showStatsByThres(PI,LTE,2)
+    plt.savefig('./random_EVAL')
+    plt.show()
+
+if __name__ == "__main__":
+    main_DCFMin()
+    # main_BayesPlot()
+    # main_random()
+
+    main_evaluation()
 
 '''
-OLD VALUES
+ 
+ ******* Pt = 0.5 ********
+MVG (Raw) -> DCFMin: 0.31239804241435565
+NBG (Raw) -> DCFMin: 0.4200652528548124
+TCG (Raw) -> DCFMin: 0.333605220228385
+TCNB (Raw) -> DCFMin: 0.40293637846655794
+MVG (Gaussianized) -> DCFMin: 0.299347471451876
+NBG (Gaussianized) -> DCFMin: 0.4461663947797716
+TCG (Gaussianized) -> DCFMin: 0.3474714518760196
+TCNB (Gaussianized) -> DCFMin: 0.45187601957585644
+MVG (Gaussianized) -> DCFMin: 0.7292006525285482
+TCG (Gaussianized) -> DCFMin: 0.7887438825448614
 
-###########################################
-pi = 0.5 
-----------   Raw Features   ----------
+******* Pt = 0.1 ********
+MVG (Raw) -> DCFMin: 0.7781402936378468
+NBG (Raw) -> DCFMin: 0.8458401305057097
+TCG (Raw) -> DCFMin: 0.8123980424143556
+TCNB (Raw) -> DCFMin: 0.866231647634584
+MVG (Gaussianized) -> DCFMin: 0.8107667210440457
+NBG (Gaussianized) -> DCFMin: 0.8205546492659055
+TCG (Gaussianized) -> DCFMin: 0.7879282218597063
+TCNB (Gaussianized) -> DCFMin: 0.866231647634584
+MVG (Gaussianized) -> DCFMin: 1.0073409461663947
+TCG (Gaussianized) -> DCFMin: 1.0057096247960848
 
-Full-Cov  0.3637425735400666
-Diag-Cov  0.44999818866830893
-Tied Full-Cov  0.35134400811476596
-Tied Diag-Cov  0.4341369608269333
-
-----------   Gaussianized Features   ----------
-
-Full-Cov  0.3106282905859054
-Diag-Cov  0.4584027677148239
-Tied Full-Cov  0.3653908853789306
-Tied Diag-Cov  0.46414167028933007
-
-###########################################
-pi = 0.1
-----------   Raw Features   ----------
-
-Full-Cov  0.806426001062648
-Diag-Cov  1.0406553398058251
-Tied Full-Cov  0.9003526059025263
-Tied Diag-Cov  1.0453014055933922
-
-----------   Gaussianized Features   ----------
-
-Full-Cov  0.8163188909819833
-Diag-Cov  1.0600124378109452
-Tied Full-Cov  0.8415235714630731
-Tied Diag-Cov  1.1252747186398104
-
-###########################################
-pi = 0.9
-----------   Raw Features   ----------
-
-Full-Cov  1.1919739892769166
-Diag-Cov  1.7905738298797278
-Tied Full-Cov  0.948558179973917
-Tied Diag-Cov  1.5113117664106654
-
-----------   Gaussianized Features   ----------
-
-Full-Cov  1.0468500941892482
-Diag-Cov  1.655430372409796
-Tied Full-Cov  0.9903637154035647
-Tied Diag-Cov  1.6173108969714538
-
+******* Pt = 0.9 ********
+MVG (Raw) -> DCFMin: 0.8425774877650898
+NBG (Raw) -> DCFMin: 0.9216965742251224
+TCG (Raw) -> DCFMin: 0.7487765089722676
+TCNB (Raw) -> DCFMin: 0.9323001631321371
+MVG (Gaussianized) -> DCFMin: 0.7895595432300164
+NBG (Gaussianized) -> DCFMin: 0.8817292006525286
+TCG (Gaussianized) -> DCFMin: 0.8482871125611745
+TCNB (Gaussianized) -> DCFMin: 0.9306688417618271
+MVG (Gaussianized) -> DCFMin: 0.99836867862969
+TCG (Gaussianized) -> DCFMin: 0.99836867862969
 '''
-
-
-
-
     
 
 

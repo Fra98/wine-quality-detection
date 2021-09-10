@@ -68,7 +68,7 @@ class GAUSSClass:
         LOGP[1]=LC[1]-LOGFX
         return LOGP[1]-LOGP[0]
 
-    def computeLogLikelihood(self, DTE):
+    def computeLLR(self, DTE):
         logN0=self.logpdf_GAU_ND(DTE,self.mu[0],self.Eps[0])
         logN1=self.logpdf_GAU_ND(DTE,self.mu[1],self.Eps[1])
 
