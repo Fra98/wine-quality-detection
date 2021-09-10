@@ -56,7 +56,7 @@ class GAUSSClass:
         exponent = -0.5 * (xmu_2.T.dot(numpy.linalg.inv(Eps)).dot(xmu_2))
         return numpy.diag(firstTerm + secondTerm + exponent)
 
-    def computeLLR(self,DTE,p):
+    def computePosteriorLLR(self,DTE,p):
         logN0=self.logpdf_GAU_ND(DTE,self.mu[0],self.Eps[0])
         logN1=self.logpdf_GAU_ND(DTE,self.mu[1],self.Eps[1])
         LC=numpy.zeros([2,DTE.shape[1]])
@@ -67,4 +67,11 @@ class GAUSSClass:
         LOGP[0]=LC[0]-LOGFX
         LOGP[1]=LC[1]-LOGFX
         return LOGP[1]-LOGP[0]
+
+    def computeLogLikelihood(self, DTE):
+        logN0=self.logpdf_GAU_ND(DTE,self.mu[0],self.Eps[0])
+        logN1=self.logpdf_GAU_ND(DTE,self.mu[1],self.Eps[1])
+
+        return logN1-logN0
+            
             
