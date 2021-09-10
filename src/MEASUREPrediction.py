@@ -64,7 +64,11 @@ class MEASUREPrediction:
             self.TPR[i]=1-numpy.float64(CONFM[0,1])/numpy.float64((CONFM[0,1]+CONFM[1,1]))
             self.FPR[i]=numpy.float64(CONFM[1,0])/numpy.float64((CONFM[1,0]+CONFM[0,0]))            
         return self.THRESH, self.DCF
-    
+
+    def showStatsByThres(self, thresh, LTE, nc):
+        M_LTEP = self.computeDecision(thresh)
+        self.showStats(M_LTEP,LTE)
+
     def getDCFNorm(self,LTE,nc):
         LTEP = self.computeOptDecision()
         CONFM = self.conf_matrix(LTEP,LTE,nc)             
@@ -73,7 +77,7 @@ class MEASUREPrediction:
        
     def getDCFMin(self):
         DCFMin = self.DCF.min()
-        TMIN = self.DCF==DCFMin
+        TMIN = self.DCF[self.DCF==DCFMin]
         return TMIN, DCFMin
 
     def showROC(self):
@@ -86,16 +90,21 @@ def showBayesPlot(LLR,LTE,nc,title):
     effPriorLogOdds = numpy.linspace(-3, 3, 21)
     DCF_NORM = numpy.zeros(effPriorLogOdds.shape)
     DCF_MIN = numpy.zeros(effPriorLogOdds.shape)
+    PI = numpy.zeros(effPriorLogOdds.shape)
+    MPA = numpy.zeros(effPriorLogOdds.shape, dtype=object)
     for i in range(effPriorLogOdds.size):
         pi_tilde=1.0/(1.0+numpy.exp(-effPriorLogOdds[i]))        
         MP = MEASUREPrediction(pi_tilde,1,1,LLR)        
         DCF_NORM[i] = MP.getDCFNorm(LTE,nc)
         MP.computeDCF(LTE,nc)
         [_, DCF_MIN[i]] = MP.getDCFMin()
+        PI[i]=pi_tilde
+        MPA[i]=MP
     plt.plot(effPriorLogOdds, DCF_NORM, label=('DCF ',title))
     plt.plot(effPriorLogOdds, DCF_MIN, label=('min DCF',title))
     plt.ylim([0, 1.1])
     plt.xlim([-3, 3])
+    return min(DCF_MIN), PI[DCF_MIN==min(DCF_MIN)], MPA[DCF_MIN==min(DCF_MIN)]
 
 
 

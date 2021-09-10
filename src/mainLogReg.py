@@ -77,23 +77,27 @@ def main_find_best_threshold():
 
     plt.figure()
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.1)
-    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1")
+    DCF1, PI1, MP1 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1")
+    MP1[0].showStatsByThres(PI1,LTE,2)
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.5)
-    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5")
+    DCF5, PI5, MP5 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5")
+    MP5[0].showStatsByThres(PI5, LTE, 2)
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.9)
-    showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9")
+    DCF9, PI9, MP9 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9")
+    MP9[0].showStatsByThres(PI9, LTE, 2)
+
     plt.legend()
     plt.xlabel("thres")
     plt.ylabel("DCF")
     plt.show()
-
-
-
+    print("0.1 DCFMin: ", DCF1, " threshold: ", PI1)
+    print("0.5 DCFMin: ", DCF5, " threshold: ", PI5)
+    print("0.9 DCFMin: ", DCF9, " threshold: ", PI9)
 
 if __name__ == "__main__":
-    ptrain = 0.9
-    main_find_best_lambda(ptrain)
-    #main_find_best_threshold()
+    #ptrain = 0.9
+    #main_find_best_lambda(ptrain)
+    main_find_best_threshold()
 
 '''
 OLD VALUES:
