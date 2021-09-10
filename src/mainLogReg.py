@@ -41,7 +41,7 @@ def computeDCFMin(S,L,p):
 
 
 
-def main_find_best_lambda(ptrain):
+def main_find_best_lambda(ptrain, gauss=False):
     D, L = db.load_db()
     lambdas = np.logspace(-6,1,10)
     N = lambdas.size                         
@@ -51,11 +51,11 @@ def main_find_best_lambda(ptrain):
 
     i=0
     for l in lambdas:
-        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF1[i] = computeDCFMin(LLR, LTE, 0.1)
-        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF5[i] = computeDCFMin(LLR, LTE, 0.5)
-        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain)
+        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF9[i] = computeDCFMin(LLR, LTE, 0.9)
         i=i+1
     
@@ -68,22 +68,21 @@ def main_find_best_lambda(ptrain):
     plt.ylabel("Min DCF")
     plt.show()
 
-
-def main_find_best_threshold():
+def main_find_best_threshold(gauss = True):
     D, L = db.load_db()
 
     # given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
-    l=1e-4
+    l=1e-5
 
     plt.figure()
-    LLR, LTE = compute_LLR_LTE(D, L, l, 0.1)
-    DCF1, PI1, MP1 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1")
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.1, gauss=gauss)
+    DCF1, PI1, MP1 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1",fast=True)
     MP1[0].showStatsByThres(PI1,LTE,2)
-    LLR, LTE = compute_LLR_LTE(D, L, l, 0.5)
-    DCF5, PI5, MP5 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5")
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.5, gauss=gauss)
+    DCF5, PI5, MP5 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5",fast=True)
     MP5[0].showStatsByThres(PI5, LTE, 2)
-    LLR, LTE = compute_LLR_LTE(D, L, l, 0.9)
-    DCF9, PI9, MP9 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9")
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.9, gauss=gauss)
+    DCF9, PI9, MP9 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9",fast=True)
     MP9[0].showStatsByThres(PI9, LTE, 2)
 
     plt.legend()
@@ -95,9 +94,10 @@ def main_find_best_threshold():
     print("0.9 DCFMin: ", DCF9, " threshold: ", PI9)
 
 if __name__ == "__main__":
-    #ptrain = 0.9
-    #main_find_best_lambda(ptrain)
-    main_find_best_threshold()
+    gauss=True
+    ptrain = 0.9
+    #main_find_best_lambda(ptrain, gauss=gauss)
+    main_find_best_threshold( gauss=gauss )
 
 '''
 OLD VALUES:
