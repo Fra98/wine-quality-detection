@@ -10,7 +10,7 @@ def mrow(v):
     return v.reshape(1,v.size)    
 
 class SVMClass:
-    def __init__(self, DTR, LTR, C, K):  
+    def __init__(self, DTR, LTR, C, K=1, pt=-1):
         self.K=K
         k_values= numpy.ones([1,DTR.shape[1]])*K
         self.D = numpy.vstack((DTR, k_values))
@@ -18,9 +18,18 @@ class SVMClass:
         self.LTR = LTR
         self.Z  = mcol(2*LTR-1)
         self.C = C
-        
-        self.bounds = [(0,C)] * LTR.size        
-        G = numpy.dot(self.D.T,self.D)        
+        if pt!=-1:
+            ptEMP = (1.0*(self.Z > 0)).sum()/(LTR.size)
+            CT = C * pt / ptEMP
+            CF = C * (1-pt) / (1-ptEMP)
+            self.bounds = [(0,CT)] * LTR.size
+            for i in range(LTR.shape[0]):
+                if LTR[i]==0:
+                    self.bounds[i] = (0,CF)
+        else:
+            self.bounds = [(0, C)] * LTR.size
+
+        G = numpy.dot(self.D.T,self.D)
         self.H=self.Z * self.Z.T * G
                     
 

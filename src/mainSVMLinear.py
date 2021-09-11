@@ -1,117 +1,86 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.stats import norm
 import dataset as db
 import SVM
-import MEASUREPrediction
+from MEASUREPrediction import MEASUREPrediction, showBayesPlot
+from utils import split_K_folds
+from stats import gauss_data
 
-def split_db_2to1(D, L, seed=0):
-    nTrain = int(D.shape[1] * 2.0 / 3.0)
-    np.random.seed(seed)
-    idx = np.random.permutation(D.shape[1])
-    idxTrain = idx[0:nTrain]
-    idxTest = idx[nTrain:]
+K = 5  # number of folds cross-validation
 
-    DTR = D[:, idxTrain]
-    DTE = D[:, idxTest]
-    LTR = L[idxTrain]
-    LTE = L[idxTest]
-    return DTR, LTR, DTE, LTE
+def compute_LLR_LTE(D, L, C, gauss=False, ptrain=-1):
+    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
+    D = np.concatenate(D_SETS, axis=1)
+    L = np.concatenate(L_SETS, axis=0)
 
-def gauss(TD):
-    def gauss_func(D):
-        DG = np.copy(D)
-        for i in range(D.shape[0]):
-            for x in range(D.shape[1]):
-                summ = 1*(TD[i]>D[i][x])
-                DG[i][x] = (summ.sum()+1.0)/(TD.shape[1]+1.0)
-        DG = norm.ppf(DG)
-        return DG
-    return gauss_func
+    if gauss == True:
+        for i in range(K):
+            D_SETS[i] = gauss_data(D_SETS[i])
 
-def main(D,L,C,p):
-    LLR=0
-    LET=0
-    for i in range(2):
-        DT, LT, DE, LE = split_db_2to1(D, L, i)
+    S = []
+    for i in range(K):
+        DT = np.concatenate(D_SETS[:i] + D_SETS[i + 1:], axis=1)
+        LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
+        DE = D_SETS[i]
 
-        '''
-        #uncomment this lines to get the gaussianized version
-        gauss_func = gauss(DT)
-        DT=gauss_func(DT)
-        DE = gauss_func(DE)
-        '''
-
-        SVMOBJ = SVM.SVMClass(DT, LT, C, 10)
+        SVMObj = SVM.SVMClass(DT, LT, C, 1, pt=ptrain) #, 0.5)
         x0 = np.zeros(LT.size)
-        SVMOBJ.computeResult(x0)
-        [score, LTEP] = SVMOBJ.computeScore(DE)
-        if i==0:
-            LLR = score
-            LET=LE
-        else:
-            LLR = np.hstack((LLR, score))
-            LET = np.hstack((LET, LE))
+        SVMObj.computeResult(x0)
+        S_i, _ = SVMObj.computeScore(DE)
+        S = np.hstack((S, S_i))
 
-    MP = MEASUREPrediction.MEASUREPrediction(p, 1.0, 1.0, LLR)
-    return MP.getDCFNorm(LET, 2)
+    return S, L
+
+
+def computeDCFMin(S, L, p):
+    MP = MEASUREPrediction(p, 1.0, 1.0, S)
+    MP.computeDCF(L, db.NUM_CLASSES)
+    _, DCFMin = MP.getDCFMin()
+    return DCFMin
+
+def main_find_best_C(gauss=False):
+    D, L = db.load_db()
+    Csub = np.logspace(-3, 3, 10)
+    N = Csub.size
+    minDCF1 = np.zeros(N)
+    minDCF5 = np.zeros(N)
+    minDCF9 = np.zeros(N)
+
+    i = 0
+    for C in Csub:
+        LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss)
+        minDCF1[i] = computeDCFMin(LLR, LTE, 0.1)
+        LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss)
+        minDCF5[i] = computeDCFMin(LLR, LTE, 0.5)
+        LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss)
+        minDCF9[i] = computeDCFMin(LLR, LTE, 0.9)
+        i = i + 1
+
+    plt.figure()
+    plt.semilogx(Csub, minDCF1, label='mindcf (π=0.1)')
+    plt.semilogx(Csub, minDCF5, label='mindcf (π=0.5)')
+    plt.semilogx(Csub, minDCF9, label='mindcf (π=0.9)')
+    plt.legend()
+    plt.xlabel("C")
+    plt.ylabel("Min DCF")
+    plt.show()
+
+def main_print_DCFMin(C, pi, gauss=False):
+    D, L = db.load_db()
+    Csub = np.logspace(-3, 3, 10)
+    N = Csub.size
+
+    LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss, ptrain=pi)
+    print("πtrain 0.1: ",computeDCFMin(LLR, LTE, 0.1))
+    LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss, ptrain=pi)
+    print("πtrain 0.5: ",computeDCFMin(LLR, LTE, 0.5))
+    LLR, LTE = compute_LLR_LTE(D, L, C, gauss=gauss, ptrain=pi)
+    print("πtrain 0.9: ",computeDCFMin(LLR, LTE, 0.9))
+
 
 if __name__ == "__main__":
-    D, L = db.load_db()
-    '''
-    #compute optimal C
-    ni=10
-    minDCF1 = np.zeros([ni])
-    minDCF5 = np.zeros([ni])
-    minDCF9 = np.zeros([ni])
-    i=0
-    for l in np.logspace(-2,0,ni):
-        minDCF1[i] = main(D, L, l, 0.1)
-        minDCF5[i]=main(D, L, l, 0.5)
-        minDCF9[i] = main(D, L, l, 0.9)
-        i=i+1
-    plt.figure()
-    plt.semilogx(np.logspace(-2,0,ni), minDCF1, label='mindcf (π=0.1)')
-    plt.semilogx(np.logspace(-2,0,ni), minDCF5, label='mindcf (π=0.5)')
-    plt.semilogx(np.logspace(-2,0,ni), minDCF9, label='mindcf (π=0.9)')
-    plt.legend()
-    plt.show()
-    '''
-    #given optimal C, compute minDCF for different πt (0.1, 0.5, 0.9)
-    C=0.1
-    print("mindcf (π = 0.1) ", main(D, L, C, 0.1))
-    print("mindcf (π = 0.5) ", main(D, L, C, 0.5))
-    print("mindcf (π = 0.9) ", main(D, L, C, 0.9))
-
-''' 
----- C = 0.1 ---- K-Fold with K=3 ----
-
-Gaussianized Features
-mindcf (π = 0.1)  0.957658452804084
-mindcf (π = 0.5)  0.3970325135373679
-mindcf (π = 0.9)  0.9302855370816536
-
-Raw Features
-mindcf (π = 0.1)  0.9854368932038835 
-mindcf (π = 0.5)  0.45504639679396963
-mindcf (π = 0.9)  0.9471744471744472
-
------ COMPARISON BETWEEN LINEAR MODELS -----
-
-Gauss Features [Linear SVM]
-mindcf (π = 0.1)  0.957658452804084
-mindcf (π = 0.5)  0.3970325135373679
-mindcf (π = 0.9)  0.9302855370816536
-
-Gauss Features [Logistic Regression] 
-mindcf (π = 0.1)  0.8378664812532263
-mindcf (π = 0.5)  0.3728263961316014
-mindcf (π = 0.9)  0.7959419740210486
-
-Raw Features [Tied Full-Cov]
-mindcf (π = 0.1)  0.9003526059025263
-mindcf (π = 0.5)  0.35134400811476596
-mindcf (π = 0.9)  0.948558179973917
-
-Better one Linear: Gaussian [Tied Full-Cov]
-'''
+    gauss=True
+    #main_find_best_C(gauss)
+    C=1
+    pi = -1 #0.5 #-1 non ribilanciamento
+    main_print_DCFMin(C, pi, gauss)

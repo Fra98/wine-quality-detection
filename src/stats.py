@@ -103,6 +103,8 @@ def main():
 
     # Gaussianization
     DG = gauss_data(D)
+    PCC = pearsonCorrelationMatrix(DG)
+    plot_pearsonCorrelationMatrix(PCC)
     plot_histograms(DG, L, prefix='gaussianized')
 
 

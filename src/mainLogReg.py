@@ -40,16 +40,15 @@ def computeDCFMin(S,L,p):
     return DCFMin
 
 
-
 def main_find_best_lambda(ptrain, gauss=False):
     D, L = db.load_db()
-    lambdas = np.logspace(-6,1,10)
-    N = lambdas.size                         
+    lambdas = np.logspace(-6, 1, 10)
+    N = lambdas.size
     minDCF1 = np.zeros(N)
     minDCF5 = np.zeros(N)
     minDCF9 = np.zeros(N)
 
-    i=0
+    i = 0
     for l in lambdas:
         LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF1[i] = computeDCFMin(LLR, LTE, 0.1)
@@ -57,8 +56,8 @@ def main_find_best_lambda(ptrain, gauss=False):
         minDCF5[i] = computeDCFMin(LLR, LTE, 0.5)
         LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF9[i] = computeDCFMin(LLR, LTE, 0.9)
-        i=i+1
-    
+        i = i + 1
+
     plt.figure()
     plt.semilogx(lambdas, minDCF1, label='mindcf (π=0.1)')
     plt.semilogx(lambdas, minDCF5, label='mindcf (π=0.5)')
@@ -68,21 +67,45 @@ def main_find_best_lambda(ptrain, gauss=False):
     plt.ylabel("Min DCF")
     plt.show()
 
-def main_find_best_threshold(gauss = True):
+
+def main_find_minDCF(gauss=True):
     D, L = db.load_db()
 
     # given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
-    l=1e-5
+    l = 1e-5
+
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.1, gauss=gauss)
+    print("Ptraining = 0.1")
+    print("MinDCF π= 0.1", computeDCFMin(LLR, LTE, 0.1))
+    print("MinDCF π= 0.5", computeDCFMin(LLR, LTE, 0.5))
+    print("MinDCF π= 0.9", computeDCFMin(LLR, LTE, 0.9))
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.5, gauss=gauss)
+    print("Ptraining = 0.5")
+    print("MinDCF π= 0.1", computeDCFMin(LLR, LTE, 0.1))
+    print("MinDCF π= 0.5", computeDCFMin(LLR, LTE, 0.5))
+    print("MinDCF π= 0.9", computeDCFMin(LLR, LTE, 0.9))
+    LLR, LTE = compute_LLR_LTE(D, L, l, 0.9, gauss=gauss)
+    print("Ptraining = 0.9")
+    print("MinDCF π= 0.1", computeDCFMin(LLR, LTE, 0.1))
+    print("MinDCF π= 0.5", computeDCFMin(LLR, LTE, 0.5))
+    print("MinDCF π= 0.9", computeDCFMin(LLR, LTE, 0.9))
+
+
+def main_find_best_threshold(gauss=True):
+    D, L = db.load_db()
+
+    # given optimal lambda, compute minDCF for different πt (0.1, 0.5, 0.9)
+    l = 1e-5
 
     plt.figure()
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.1, gauss=gauss)
-    DCF1, PI1, MP1 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.1",fast=True)
-    MP1[0].showStatsByThres(PI1,LTE,2)
+    DCF1, PI1, MP1 = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "0.1", fast=True)
+    MP1[0].showStatsByThres(PI1, LTE, 2)
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.5, gauss=gauss)
-    DCF5, PI5, MP5 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.5",fast=True)
+    DCF5, PI5, MP5 = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "0.5", fast=True)
     MP5[0].showStatsByThres(PI5, LTE, 2)
     LLR, LTE = compute_LLR_LTE(D, L, l, 0.9, gauss=gauss)
-    DCF9, PI9, MP9 = showBayesPlot(LLR,LTE,db.NUM_CLASSES,"0.9",fast=True)
+    DCF9, PI9, MP9 = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "0.9", fast=True)
     MP9[0].showStatsByThres(PI9, LTE, 2)
 
     plt.legend()
@@ -97,41 +120,5 @@ if __name__ == "__main__":
     gauss=True
     ptrain = 0.9
     #main_find_best_lambda(ptrain, gauss=gauss)
-    main_find_best_threshold( gauss=gauss )
-
-'''
-OLD VALUES:
-
-l = 1e-5
-
-Gaussianized Features
-
------  minDCF with πT (π for training) = 0.1 ---- 
-mindcf (π = 0.1)  0.9832285115303985
-mindcf (π = 0.5)  0.6722648883832159
-mindcf (π = 0.9)  1.6865459372333367
------  minDCF with πT (π for training) = 0.5 ---- 
-mindcf (π = 0.1)  0.8378664812532263
-mindcf (π = 0.5)  0.3728263961316014
-mindcf (π = 0.9)  0.7959419740210486
------  minDCF with πT (π for training) = 0.9 ---- 
-mindcf (π = 0.1)  2.1520348071594873
-mindcf (π = 0.5)  0.5877121456338296
-mindcf (π = 0.9)  0.9015075376884422
-
-Raw Features
-
------  minDCF with πT (π for training) = 0.1 ---- 
-mindcf (π = 0.1)  0.9916142557651991
-mindcf (π = 0.5)  0.7562087165386682
-mindcf (π = 0.9)  1.8266616099364754
------  minDCF with πT (π for training) = 0.5 ---- 
-mindcf (π = 0.1)  0.8809961758477924
-mindcf (π = 0.5)  0.3727400103241575
-mindcf (π = 0.9)  0.7353180999336305
------  minDCF with πT (π for training) = 0.9 ---- 
-mindcf (π = 0.1)  2.1277730370932226
-mindcf (π = 0.5)  0.5745604331932197
-mindcf (π = 0.9)  0.911102683227458
-
-'''
+    main_find_minDCF( gauss=gauss )
+    #main_find_best_threshold( gauss=gauss )
