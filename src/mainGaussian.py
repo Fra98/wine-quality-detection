@@ -53,7 +53,7 @@ def compute_DCFMin(D, L, p, gauss=False, model='MVG', PCAm=None):
     S, L = compute_LLR_Gaussian(D, L, gauss, model, PCAm)
     
     MP = MEASUREPrediction(p, 1.0, 1.0, S)
-    MP.computeDCF_FAST(L, db.NUM_CLASSES)
+    MP.computeDCF(L, db.NUM_CLASSES)
     _, DCFMin = MP.getDCFMin()
 
     if gauss:
@@ -90,64 +90,49 @@ def main_DCFMin():
         print()
 
 
-def main_BayesPlot():
-    D, L = db.load_db()
+def main_BayesPlot(train=True):
+    D, L = db.load_db(train)
 
     plt.figure()
-    # 1
-    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=False, model='MVG')
-    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Raw")
-    print("minDCF:", minDCF)
-    print("PI =", PI)
-    MP[0].showStatsByThres(PI,LTE,2)
 
-    # 2
-    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=False, model='TCG')
-    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Raw")
-    print("minDCF:", minDCF)
-    print("PI =", PI)
+    # 1 MVG Raw
+    print("MVG Raw:")
+    LLR, LTE = compute_LLR_Gaussian(D, L, gauss=False, model='MVG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Raw")
     MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
 
-    #3
-    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=True, model='MVG')
-    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Gauss")
-    print("minDCF:", minDCF)
-    print("PI =", PI)
+    # 2 TCG Raw
+    print("TCG Raw:")
+    LLR, LTE = compute_LLR_Gaussian(D, L, gauss=False, model='TCG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Raw")
     MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
 
-    #4
-    LLR, LTE = compute_LLR_Gaussian(D, L, None, gauss=True, model='TCG')
-    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Gauss")
-    print("minDCF:", minDCF)
-    print("PI =", PI)
+    #3 MVG Gauss
+    print("MVG Gaussianized:")
+    LLR, LTE = compute_LLR_Gaussian(D, L, gauss=True, model='MVG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Gauss")
     MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
 
     plt.title('MinDCF and ActDCF comparison between different models')
-    plt.savefig('./random.png')
+    if train:
+        plt.savefig('./src/plots/Gaussian/Gaussian_bayes_DCF_trainSet.png')
+    else:
+        plt.savefig('./src/plots/Gaussian/Gaussian_bayes_DCF_testSet.png')
     plt.show()
 
-
-def main_evaluation():
-    D, L = db.load_db(False)
-
-    plt.figure()
-    LLR, LTE = compute_LLR_Gaussian(D, L, gauss=True, model='MVG')
-    minDCF, PI, MP = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "MVG Gauss")
-    print("minDCF:", minDCF)
-    print("PI =", PI)
-    MP[0].showStatsByThres(PI,LTE,2)
-    plt.savefig('./random_EVAL')
-    plt.show()
+    print()
 
 if __name__ == "__main__":
     main_DCFMin()
-    # main_BayesPlot()
-    # main_random()
-
-    main_evaluation()
+    main_BayesPlot(train=True)
+    main_BayesPlot(train=False)
 
 '''
- 
+DCF MIN
+
  ******* Pt = 0.5 ********
 MVG (Raw) -> DCFMin: 0.31239804241435565
 NBG (Raw) -> DCFMin: 0.4200652528548124
@@ -183,6 +168,45 @@ TCG (Gaussianized) -> DCFMin: 0.8482871125611745
 TCNB (Gaussianized) -> DCFMin: 0.9306688417618271
 MVG (Gaussianized) -> DCFMin: 0.99836867862969
 TCG (Gaussianized) -> DCFMin: 0.99836867862969
+
+
+
+BEST MODELS TRAIN SET:
+
+-MVG Raw    
+    ACCURACY 83.19738988580751
+    ERROR RATE 16.80261011419249
+    minDCF: 0.31239804241435565  | actDCF: 0.3637846655791191
+
+-TCG Raw
+    ACCURACY 83.5236541598695
+    ERROR RATE 16.476345840130506
+    minDCF: 0.333605220228385  | actDCF: 0.3409461663947798
+
+-MVG Gauss
+    ACCURACY 85.10059815116911
+    ERROR RATE 14.899401848830891
+    minDCF: 0.299347471451876  | actDCF: 0.3132137030995106
+
+
+BEST MODELS TEST SET:
+
+-MVG Raw    
+    ACCURACY 81.8331503841932
+    ERROR RATE 18.166849615806797
+    minDCF: 0.32026031587489856  | actDCF: 0.3608345298291612
+
+-TCG Raw
+    ACCURACY 85.34577387486279
+    ERROR RATE 14.654226125137214
+    minDCF: 0.32330617808019646  | actDCF: 0.3415657448446636
+
+-MVG Gauss
+
+
+
+
+
 '''
     
 

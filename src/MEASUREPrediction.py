@@ -69,7 +69,7 @@ class MEASUREPrediction:
         S_MIN = min(self.LLR)
         S_MAX = max(self.LLR)
 
-        iter = 150 
+        iter = 300 
         self.DCF = numpy.zeros(iter)
         i = 0
         for tresh in numpy.linspace(S_MIN, S_MAX, iter):
@@ -124,7 +124,7 @@ def showBayesPlot(LLR,LTE,nc,title,fast=False):
     plt.ylabel("DCF Value")
     plt.ylim([0, 1.1])
     plt.xlim([-3, 3])
-    return min(DCF_MIN), PI[DCF_MIN==min(DCF_MIN)], MPA[DCF_MIN==min(DCF_MIN)]
+    return min(DCF_MIN), PI[DCF_MIN==min(DCF_MIN)], MPA[DCF_MIN==min(DCF_MIN)], min(DCF_NORM)
 
 
 
