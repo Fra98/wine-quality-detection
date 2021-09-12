@@ -125,11 +125,12 @@ def main_find_best_G():
         print(f'({model}) Gau -> minDCF = {MINDCF_GAU.min()}, G={G[np.where(MINDCF_GAU == MINDCF_GAU.min())[0][0]]}')
         plot_MinDCF_GMM(model, MINDCF_RAW, MINDCF_GAU, G)
 
+
 def main_best_models():
     D, L = load_db()
     alpha = 0.1
     
-    for p in [0.5, 0.1]:
+    for p in [0.5, 0.1, 0.9]:
         compute_GMM_DCFMin(D, L, p, 512, alpha, False, 'MVG')
         compute_GMM_DCFMin(D, L, p, 128, alpha, True, 'MVG')
         compute_GMM_DCFMin(D, L, p, 128, alpha, True, 'TCG')
@@ -200,9 +201,9 @@ if __name__ == '__main__':
     # main_tuning_alpha()
     # main_find_best_G()
     # main_best_models()
-    # main_BayesPlot()
-    main_BayesPlotNOTRAIN()
-    
+    main_BayesPlot()
+    # main_BayesPlotNOTRAIN()
+
 '''
 # BEST MODELS
 

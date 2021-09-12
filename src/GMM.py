@@ -117,13 +117,22 @@ def GMM_EM(X, gmm, G, threshold, method='MVG', psi=0):
     return gmm, SPost, logdens
 
 
-def GMM_LBG(X, G=2, threshold=10**(-6), alpha=0.1, psi=0, method='MVG'):
+def GMM_LBG(X, G, threshold=10**(-6), alpha=0.1, psi=0, method='MVG'):
     mu = mcol(GAU_mu_ML(X))
     C = covarianceMatrix(X)
     C = optimizeCovDegenerateCases(C, psi)  # Constraint on initial GMM Covariances to avoid degenerate cases
+    if method == 'NBG' or method == 'TCNB':
+        C = C * np.eye(C.shape[0])
     gmm = [(1.0, mu, C)]
 
+    if G == 1:
+        SJoint = GMM_joint_density(X, gmm, G)
+        logdens = marginal_densities(SJoint)
+        SPost = posterior_probabilites(SJoint, logdens)
+        return gmm, SPost, logdens
+
     numIter = int(np.log2(G))
+    tmpG = 1
     for _ in range(0, numIter):
         def split_GMM(gmm_i):
             w_i, mu_i, C_i = gmm_i
@@ -138,9 +147,10 @@ def GMM_LBG(X, G=2, threshold=10**(-6), alpha=0.1, psi=0, method='MVG'):
             gmm_i_1, gmm_i_2 = split_GMM(gmm_i)
             new_gmm.append(gmm_i_1)
             new_gmm.append(gmm_i_2)
-        gmm = new_gmm
+        tmpG = tmpG * 2
+        gmm, SPost, logdens = GMM_EM(X, new_gmm, tmpG, threshold, method, psi)
 
-    return GMM_EM(X, gmm, G, threshold, method, psi)
+    return gmm, SPost, logdens
 
 
 '''
