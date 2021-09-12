@@ -54,7 +54,7 @@ def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
     else:
         strgauss = 'Raw'
 
-    print(f'DCFMin: {DCFMin:.4f} -> {model} ({strgauss}) (p={p}) (alpha={alpha}) G={G}')
+    print(f'MinDCF: {DCFMin:.4f} -> {model} ({strgauss}) (p={p}) (alpha={alpha}) G={G}')
 
     return DCFMin
 
@@ -110,7 +110,6 @@ def main_find_best_G():
     p = 0.5
     alpha = 0.1
     G = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-    # G = [1, 2, 4]
     MODELS = ['MVG', 'NBG', 'TCG', 'TCNB']
     
 
@@ -126,8 +125,61 @@ def main_find_best_G():
         print(f'({model}) Gau -> minDCF = {MINDCF_GAU.min()}, G={G[np.where(MINDCF_GAU == MINDCF_GAU.min())[0][0]]}')
         plot_MinDCF_GMM(model, MINDCF_RAW, MINDCF_GAU, G)
 
+def main_best_models():
+    D, L = load_db()
+    alpha = 0.1
+    
+    for p in [0.5, 0.1]:
+        compute_GMM_DCFMin(D, L, p, 512, alpha, False, 'MVG')
+        compute_GMM_DCFMin(D, L, p, 128, alpha, True, 'MVG')
+        compute_GMM_DCFMin(D, L, p, 128, alpha, True, 'TCG')
 
+
+def main_BayesPlot(train=True):
+    D, L = load_db(train)
+    alpha = 0.1
+
+    plt.figure()
+
+    # 1 MVG Raw
+    print("MVG Raw 512G (alpha=0.1) (pt=0.5):")
+    LLR, LTE = compute_GMM_LLR(D, L, 512, alpha, False, 'MVG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Raw 512G (alpha=0.1) (pt=0.5)", True)
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
+
+    # 2 TCG Gaussianized
+    print("MVG Gau 128G (alpha=0.1) (pt=0.5):")
+    LLR, LTE = compute_GMM_LLR(D, L, 128, alpha, True, 'TCG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 128G (alpha=0.1) (pt=0.5)", False)
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
+
+    if train:
+        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_trainSet.png')
+    else:
+        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_testSet.png')
+    plt.show()
+
+    print()
 
 if __name__ == '__main__':
     # main_tuning_alpha()
-    main_find_best_G()
+    # main_find_best_G()
+    # main_best_models()
+    main_BayesPlot()
+
+'''
+# BEST MODELS
+
+(MVG) Raw -> minDCF = 0.283, G=512, pt=0.5
+(MVG) Gau -> minDCF = 0.300, G=128, pt-0.5
+(TCG) Gau -> minDCF = 0.285, G=128, pt=0.5
+
+The Naive Bayes assumption doesn't perform well both with or without tied covariance.
+Gaussanization it's harmful in this case.
+Non-diagonal models, on the other hand, provide smaller minimum DCF at higher values of G. 
+The tied covariance model perform better with Gaussianization while the non-tied with raw
+data. 
+
+'''
