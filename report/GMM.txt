@@ -1,0 +1,106 @@
+MinDCF: 0.3238 -> MVG (Raw) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.3108 -> MVG (Gau) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.3181 -> MVG (Raw) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3140 -> MVG (Gau) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3051 -> MVG (Raw) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.2912 -> MVG (Gau) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.2985 -> MVG (Raw) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3042 -> MVG (Gau) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3002 -> MVG (Raw) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3344 -> MVG (Gau) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3263 -> MVG (Raw) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3638 -> MVG (Gau) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3817 -> MVG (Raw) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3874 -> MVG (Gau) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.4127 -> MVG (Raw) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3964 -> MVG (Gau) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.4160 -> MVG (Raw) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3670 -> MVG (Gau) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.4184 -> MVG (Raw) (p=0.5) (alpha=0.1) G=512
+MinDCF: 0.3287 -> MVG (Gau) (p=0.5) (alpha=0.1) G=512
+
+MinDCF: 0.4144 -> NBG (Raw) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.4502 -> NBG (Gau) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.4266 -> NBG (Raw) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.4054 -> NBG (Gau) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3597 -> NBG (Raw) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.3116 -> NBG (Gau) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.3344 -> NBG (Raw) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3369 -> NBG (Gau) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3222 -> NBG (Raw) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3393 -> NBG (Gau) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3303 -> NBG (Raw) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3295 -> NBG (Gau) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3222 -> NBG (Raw) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3181 -> NBG (Gau) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3450 -> NBG (Raw) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3524 -> NBG (Gau) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3842 -> NBG (Raw) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3728 -> NBG (Gau) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.4217 -> NBG (Raw) (p=0.5) (alpha=0.1) G=512
+MinDCF: 0.3899 -> NBG (Gau) (p=0.5) (alpha=0.1) G=512
+
+MinDCF: 0.3238 -> TCG (Raw) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.3108 -> TCG (Gau) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.3238 -> TCG (Raw) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3108 -> TCG (Gau) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3206 -> TCG (Raw) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.2912 -> TCG (Gau) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.3303 -> TCG (Raw) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.2871 -> TCG (Gau) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3059 -> TCG (Raw) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.2920 -> TCG (Gau) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3173 -> TCG (Raw) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3051 -> TCG (Gau) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3002 -> TCG (Raw) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.2936 -> TCG (Gau) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3230 -> TCG (Raw) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3108 -> TCG (Gau) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3271 -> TCG (Raw) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3418 -> TCG (Gau) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3670 -> TCG (Raw) (p=0.5) (alpha=0.1) G=512
+MinDCF: 0.4160 -> TCG (Gau) (p=0.5) (alpha=0.1) G=512
+
+MinDCF: 0.4144 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.4502 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=1
+MinDCF: 0.4690 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.4323 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=2
+MinDCF: 0.3931 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.3532 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=4
+MinDCF: 0.3703 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3108 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=8
+MinDCF: 0.3254 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3303 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=16
+MinDCF: 0.3116 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.3075 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=32
+MinDCF: 0.2977 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3181 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=64
+MinDCF: 0.3214 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3083 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=128
+MinDCF: 0.3377 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3385 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=256
+MinDCF: 0.3532 -> TCNB (Raw) (p=0.5) (alpha=0.1) G=512
+MinDCF: 0.3874 -> TCNB (Gau) (p=0.5) (alpha=0.1) G=512
+
+
+
+MINIMUM for evrey model
+
+(MVG) Raw -> minDCF = 0.2985, G=8
+(MVG) Gau -> minDCF = 0.2911, G=4
+
+(NBG) Raw -> minDCF = 0.3221, G=16
+(NBG) Gau -> minDCF = 0.3115, G=4
+
+(TCG) Raw -> minDCF = 0.3001, G=64
+(TCG) Gau -> minDCF = 0.2871, G=8
+
+(TCNB) Raw -> minDCF = 0.2977, G=64
+(TCNB) Gau -> minDCF = 0.3075, G=32
+
+
+BEST MODELS:
+1) TCG Gau -> minDCF = 0.2871, G=8
+2) MVG Gau -> minDCF = 0.2911, G=4
+
+

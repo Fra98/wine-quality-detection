@@ -3,7 +3,7 @@ import numpy as np
 import dataset as db
 import GAUSSClass
 from MEASUREPrediction import MEASUREPrediction, showBayesPlot
-from utils import split_K_folds
+from utils import split_K_folds, computeErrorRate
 from stats import gauss_data
 from PCA import PCA
 
@@ -125,10 +125,87 @@ def main_BayesPlot(train=True):
 
     print()
 
+
+def trainModel(DTR, LTR, model='MVG'):
+    GM = GAUSSClass.GAUSSClass(DTR, LTR)
+    if model == 'MVG':
+        GM.computeMVG()
+    elif model =='TCG':
+        GM.computeTCG()
+    elif model =='NBG':
+        GM.computeNBG()
+    elif model=='TCNB':
+        GM.computeTCNB()
+    else:
+        print("Incorrect model name")
+        exit()
+
+    return GM
+
+
+
+def computeDCF_EVAL(DTR, LTR, DTE, LTE, gauss=False, model='MVG', PCAm=None, title=''):
+    # PRE-PROCESSING
+    if gauss == True:
+        DTR = gauss_data(DTR)
+        DTE = gauss_data(DTE)
+
+    if PCAm != None:
+        DTR = PCA(DTR, PCAm)
+        DTE = PCA(DTE, PCAm)
+
+    # TRAINING
+    GM = trainModel(DTR, LTR, model)
+
+    # EVALUATION
+    S = GM.computeLLR(DTE)
+    
+    minDCF, PI, MP, actDCF = showBayesPlot(S, LTE, db.NUM_CLASSES, title)
+    MP[0].showStatsByThres(PI, LTE, 2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+
+def main_evaluation():
+    DTR, LTR = db.load_db(train=True)
+    DTE, LTE = db.load_db(train=False)
+    pi = 0.33
+
+    plt.figure()
+
+    print('MVG Raw')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=False, model='MVG', PCAm=None, title='MVG Raw')
+    
+    print('TCG Raw')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=False, model='TCG', PCAm=None, title='TCG Raw')
+
+    print('MVG Gaussianized')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=True, model='MVG', PCAm=None, title='MVG Gaussianized')
+    
+    plt.savefig('./src/plots/Gaussian/Gaussian_bayes_DCF_evalSet.png')
+    
+def main_comparison_EVAL_VAL():
+    DTR, LTR = db.load_db(train=True)
+    DTE, LTE = db.load_db(train=False)
+
+    plt.figure()
+    
+    print('TCG Raw EVAL')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, None, gauss=False, model='TCG', PCAm=None, title='TCG Raw EVAL')
+    
+    print("TCG Raw VAL:")
+    LLR, LTE = compute_LLR_Gaussian(DTR, LTR, gauss=False, model='TCG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, db.NUM_CLASSES, "TCG Raw VAL")
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+    plt.savefig('./src/plots/Gaussian/Gaussian_bayes_TCG_RAW_VAL_vs_EVAL.png')
+
+
 if __name__ == "__main__":
-    main_DCFMin()
-    main_BayesPlot(train=True)
-    main_BayesPlot(train=False)
+    # main_DCFMin()
+    # main_BayesPlot(train=True)
+    # main_evaluation()
+    main_comparison_EVAL_VAL()
 
 '''
 DCF MIN
