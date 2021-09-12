@@ -142,16 +142,49 @@ def main_BayesPlot(train=True):
     plt.figure()
 
     # 1 MVG Raw
-    print("MVG Raw 512G (alpha=0.1) (pt=0.5):")
+    print("MVG Raw 512G (alpha=0.1):")
     LLR, LTE = compute_GMM_LLR(D, L, 512, alpha, False, 'MVG')
-    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Raw 512G (alpha=0.1) (pt=0.5)", True)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Raw 512G (alpha=0.1)", False)
     MP[0].showStatsByThres(PI,LTE,2)
     print("minDCF:", minDCF, " | actDCF:", actDCF)
 
     # 2 TCG Gaussianized
-    print("MVG Gau 128G (alpha=0.1) (pt=0.5):")
+    print("MVG Gau 128G (alpha=0.1):")
     LLR, LTE = compute_GMM_LLR(D, L, 128, alpha, True, 'TCG')
-    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 128G (alpha=0.1) (pt=0.5)", False)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 128G (alpha=0.1)", False)
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
+
+    if train:
+        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_trainSet.png')
+    else:
+        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_testSet.png')
+    plt.show()
+
+    print()
+
+
+def main_BayesPlotNOTRAIN(train=True):
+    D, L = load_db(train)
+    alpha = 0.1
+
+    plt.figure()
+
+    # 1 MVG Raw
+    print("MVG Raw 512G (alpha=0.1):")
+    # LLR, LTE = compute_GMM_LLR(D, L, 512, alpha, False, 'MVG')
+    LLR = np.load('LLR_512.npy')
+    LTE = np.load('LTE_512.npy')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Raw 512G (alpha=0.1)", False)
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF)
+
+    # 2 TCG Gaussianized
+    print("MVG Gau 128G (alpha=0.1):")
+    # LLR, LTE = compute_GMM_LLR(D, L, 128, alpha, True, 'TCG')
+    LLR = np.load('LLR_128.npy')
+    LTE = np.load('LTE_128.npy')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 128G (alpha=0.1)", False)
     MP[0].showStatsByThres(PI,LTE,2)
     print("minDCF:", minDCF, " | actDCF:", actDCF)
 
@@ -167,8 +200,9 @@ if __name__ == '__main__':
     # main_tuning_alpha()
     # main_find_best_G()
     # main_best_models()
-    main_BayesPlot()
-
+    # main_BayesPlot()
+    main_BayesPlotNOTRAIN()
+    
 '''
 # BEST MODELS
 
