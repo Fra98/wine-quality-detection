@@ -52,9 +52,7 @@ def main_find_best_lambda(ptrain, gauss=False):
     for l in lambdas:
         LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF1[i] = computeDCFMin(LLR, LTE, 0.1)
-        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF5[i] = computeDCFMin(LLR, LTE, 0.5)
-        LLR, LTE = compute_LLR_LTE(D, L, l, ptrain, gauss=gauss)
         minDCF9[i] = computeDCFMin(LLR, LTE, 0.9)
         i = i + 1
 

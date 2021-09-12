@@ -64,14 +64,25 @@ class SVMClass:
 
 
 class SVMKernClass:
-    def __init__(self, DTR, LTR, C, K, kf):
+    def __init__(self, DTR, LTR, C, K, kf, pt=-1):
         self.DTR = DTR
         self.LTR = LTR
         self.C = C
         self.K = K
         self.kf = kf
-        self.bounds = [(0, C)] * LTR.size
         self.Z = mcol(2 * LTR - 1)
+
+        if pt != -1:
+            ptEMP = (1.0 * (self.Z > 0)).sum() / (LTR.size)
+            CT = C * pt / ptEMP
+            CF = C * (1 - pt) / (1 - ptEMP)
+            self.bounds = [(0, CT)] * LTR.size
+            for i in range(LTR.shape[0]):
+                if LTR[i] == 0:
+                    self.bounds[i] = (0, CF)
+        else:
+            self.bounds = [(0, C)] * LTR.size
+
         
         self.H = self.Z.T * self.Z * 1.0
         self.G = numpy.zeros(self.H.shape)
@@ -79,6 +90,7 @@ class SVMKernClass:
             for j in range(self.H.shape[1]):
                 self.G[i][j] = kf(self.DTR.T[i], self.DTR.T[j])
         self.H = self.H * self.G
+
 
     def svm(self, a):
         elle = numpy.ones(a.size)
