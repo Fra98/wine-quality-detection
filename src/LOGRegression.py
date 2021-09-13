@@ -8,8 +8,12 @@ class LOGREGClass:
         self.DTR = DTR
         self.LTR = LTR
         self.l = l
-        self.D0 = DTR[:, LTR == 0]
-        self.D1 = DTR[:, LTR == 1]
+        if DTR.shape[1]==1:
+            self.D0 = mrow(DTR[LTR == 0])
+            self.D1 = mrow(DTR[LTR == 1])
+        else:
+            self.D0 = DTR[:, LTR == 0]
+            self.D1 = DTR[:, LTR == 1]
         self.pt = pt
 
     def logreg_regularized(self, d):

@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import dataset as db
 import SVM
-from MEASUREPrediction import MEASUREPrediction, showBayesPlot
-from utils import split_K_folds
+from MEASUREPrediction import MEASUREPrediction, showBayesPlot, recalScores
+from utils import split_K_folds, mcol
 from stats import gauss_data
 
 K = 5
@@ -13,6 +13,10 @@ def computeDCFMin(S, L, p):
     MP.computeDCF(L, db.NUM_CLASSES)
     _, DCFMin = MP.getDCFMin()
     return DCFMin
+
+def computeDCFActual(S, L, p):
+    MP = MEASUREPrediction(p, 1.0, 1.0, S)
+    return MP.getDCFNorm(L, db.NUM_CLASSES)
 
 def compute_LLR_LTE(D, L, C, kf, gauss=False):
     D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
@@ -29,13 +33,64 @@ def compute_LLR_LTE(D, L, C, kf, gauss=False):
         LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
         DE = D_SETS[i]
 
-        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf, pt=0.5) #0.5
+        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf) #0.5
         x0 = np.zeros(LT.size)
         SVMObj.computeResult(x0)
         S_i, _ = SVMObj.computeScore(DE)
         S = np.hstack((S, S_i))
 
     return S, L
+
+def compute_LLR_LTE(D, L, C, kf, gauss=False):
+    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
+    D = np.concatenate(D_SETS, axis=1)
+    L = np.concatenate(L_SETS, axis=0)
+
+    if gauss == True:
+        for i in range(K):
+            D_SETS[i] = gauss_data(D_SETS[i])
+
+    S = []
+    for i in range(K):
+        DT = np.concatenate(D_SETS[:i] + D_SETS[i + 1:], axis=1)
+        LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
+        DE = D_SETS[i]
+
+        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf) #0.5
+        x0 = np.zeros(LT.size)
+        SVMObj.computeResult(x0)
+        S_i, _ = SVMObj.computeScore(DE)
+        S = np.hstack((S, S_i))
+
+    return S, L
+
+
+def compute_LLR_LTE_rec(D, L, C, kf, pt, gauss=False):
+    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
+    D = np.concatenate(D_SETS, axis=1)
+    L = np.concatenate(L_SETS, axis=0)
+
+    if gauss == True:
+        for i in range(K):
+            D_SETS[i] = gauss_data(D_SETS[i])
+
+    S = []
+    ST = []
+    for i in range(K):
+        DT = np.concatenate(D_SETS[:i] + D_SETS[i + 1:], axis=1)
+        LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
+        DE = D_SETS[i]
+
+        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf)  # 0.5
+        x0 = np.zeros(LT.size)
+        SVMObj.computeResult(x0)
+        S_i, _ = SVMObj.computeScore(DE)
+        S_Train, _ = SVMObj.computeScore(DT)
+        ST_i = recalScores(S_Train, LT, S_i, pt)
+        S = np.hstack((S, S_i))
+        ST = np.hstack((ST, ST_i))
+
+    return ST, S, L
 
 def main_find_best_C(kf, gauss=False):
     D, L = db.load_db()
@@ -98,9 +153,33 @@ def main_print_DCFMin(C, kf, gauss=False):
     N = Csub.size
 
     LLR, LTE = compute_LLR_LTE(D, L, C, kf, gauss=gauss)
-    print("πtrain 0.1: ",computeDCFMin(LLR, LTE, 0.1))
-    print("πtrain 0.5: ",computeDCFMin(LLR, LTE, 0.5))
-    print("πtrain 0.9: ",computeDCFMin(LLR, LTE, 0.9))
+    print("πtilde 0.1: ",computeDCFMin(LLR, LTE, 0.1))
+    print("πtilde 0.5: ",computeDCFMin(LLR, LTE, 0.5))
+    print("πtilde 0.9: ",computeDCFMin(LLR, LTE, 0.9))
+
+    print("πtilde 0.1: ", computeDCFActual(LLR, LTE, 0.1))
+    print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
+    print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
+
+def main_print_DCF_recal(C, kf, pt, gauss=False):
+    D, L = db.load_db()
+    Csub = np.logspace(-3, 3, 10)
+    N = Csub.size
+
+    LLRC, LLR, LTE = compute_LLR_LTE_rec(D, L, C, kf, pt, gauss=gauss)
+    plt.figure()
+    showBayesPlot(LLRC, LTE, 2, 'Calibrated')
+    showBayesPlot(LLR, LTE, 2, 'Non Calibrated')
+    plt.show()
+
+    print("Calibrated")
+    print("πtilde 0.1: ", computeDCFActual(LLRC, LTE, 0.1))
+    print("πtilde 0.5: ", computeDCFActual(LLRC, LTE, 0.5))
+    print("πtilde 0.9: ", computeDCFActual(LLRC, LTE, 0.9))
+    print("Non Calibrated")
+    print("πtilde 0.1: ", computeDCFActual(LLR, LTE, 0.1))
+    print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
+    print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
 
 def main_print_show_Bayes(C, kf, gauss=False):
     D, L = db.load_db()
@@ -120,4 +199,6 @@ if __name__ == "__main__":
     #kf = SVM.RBF_F(np.exp(-3), 1.0)
     #C=10
     #main_print_DCFMin(C, kf, gauss)
-    main_print_show_Bayes(C, kf, gauss)
+    pt = 0.5  #di train
+    main_print_DCF_recal(C,kf, pt=pt, gauss=gauss)
+    #main_print_show_Bayes(C, kf, gauss)

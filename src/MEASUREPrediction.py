@@ -2,6 +2,7 @@ import numpy
 from numpy.core.defchararray import array
 from numpy.core.fromnumeric import argmax
 import matplotlib.pyplot as plt
+import LOGRegression
 
 def mcol(v):
     return v.reshape((v.size, 1)) #giro per colonna il campione
@@ -126,6 +127,13 @@ def showBayesPlot(LLR,LTE,nc,title,fast=False):
     plt.xlim([-3, 3])
     return min(DCF_MIN), PI[DCF_MIN==min(DCF_MIN)], MPA[DCF_MIN==min(DCF_MIN)], min(DCF_NORM)
 
+def recalScores(LLR1, LTE1, LLR2, pt):
+    l=1e-5
+    LogReg = LOGRegression.LOGREGClass(mcol(LLR1), LTE1, l, pt)
+    x0 = mcol(numpy.zeros(2))
+    w, bprimo, _ = LogReg.computeResult(x0)
+    b = bprimo - (numpy.log(pt/(1-pt)))
+    return numpy.dot(w,mrow(LLR2))+b
 
 
 
