@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from dataset import load_db, NUM_CLASSES
 from MEASUREPrediction import showBayesPlot
 from mainGMM import compute_GMM_LLR_EVAL_rec
+from mainSVM_RBF import compute_SVM_LLR_EVAL_rec
 
 
 def main_compare():
@@ -17,6 +18,14 @@ def main_compare():
         "title" : 'GMM TCG Gaussianized 8G (Calibrated)',
     }
 
+    SVMmod = {
+        "gauss" : True,
+        "lambda" : -1,
+        "C" : 2,
+        "model": "RBF",
+        "title": "SVM RBF Gaussianized (Calibrated)"
+    }
+
     # Recalibration
     pt = 0.5
 
@@ -24,6 +33,11 @@ def main_compare():
 
     LLR, _, LTE = compute_GMM_LLR_EVAL_rec(DTR, LTR, DTE, LTE, GMMmod["G"], GMMmod["alpha"], pt, GMMmod["gauss"], GMMmod["model"], GMMmod["PCAm"])
     minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, GMMmod['title'], False, 'red')
+    MP[0].showStatsByThres(PI, LTE, 2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+    LLR, _, LTE = compute_SVM_LLR_EVAL_rec(SVMmod["C"], SVMmod["lambda"], pt, SVMmod["gauss"])
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, SVMmod['title'], False, 'blue')
     MP[0].showStatsByThres(PI, LTE, 2)
     print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
 

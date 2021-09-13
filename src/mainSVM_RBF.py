@@ -190,6 +190,12 @@ def main_print_DCF_recal(C, kf, ps, pt, gauss=False):
     #print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
     #print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
 
+def compute_SVM_LLR_EVAL_rec(C, lamb, ps, gauss):
+    pt=-1
+    kf=SVM.RBF_F(np.exp(lamb),1)
+    LLRC, LLR, LTE = compute_LLR_LTE_eval(C, kf, ps, pt, gauss=gauss)
+    return LLRC, LLR, LTE
+
 if __name__ == "__main__":
     '''
     #find best C and l for the gauss / non - gauss datasets
@@ -213,7 +219,7 @@ if __name__ == "__main__":
     #print different DCF min for evaluation dataset
     gauss = True
     kf = SVM.RBF_F(np.exp(-1), 1.0)
-    C=2    
+    C=2
     '''
     gauss = False
     kf = SVM.RBF_F(np.exp(-3), 1.0)
@@ -221,6 +227,6 @@ if __name__ == "__main__":
     '''
     pt = -1
     ps = 0.5
-    #main_print_DCFMin_eval(C, kf, ps, pt, gauss)
-    main_print_DCF_recal(C, kf, ps, pt, gauss=gauss)
+    main_print_DCFMin_eval(C, kf, ps, pt, gauss)
+    #main_print_DCF_recal(C, kf, ps, pt, gauss=gauss)
 
