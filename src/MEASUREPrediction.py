@@ -101,7 +101,7 @@ class MEASUREPrediction:
         plt.show()
     
 
-def showBayesPlot(LLR,LTE,nc,title,fast=False):
+def showBayesPlot(LLR,LTE,nc,title,fast=False, color=''):
     effPriorLogOdds = numpy.linspace(-3, 3, 21)
     DCF_NORM = numpy.zeros(effPriorLogOdds.shape)
     DCF_MIN = numpy.zeros(effPriorLogOdds.shape)
@@ -118,8 +118,8 @@ def showBayesPlot(LLR,LTE,nc,title,fast=False):
         [_, DCF_MIN[i]] = MP.getDCFMin()
         PI[i]=pi_tilde
         MPA[i]=MP
-    plt.plot(effPriorLogOdds, DCF_NORM, label=('DCF ',title))
-    plt.plot(effPriorLogOdds, DCF_MIN, label=('min DCF',title))
+    plt.plot(effPriorLogOdds, DCF_NORM, label=('DCF ',title), color=color)
+    plt.plot(effPriorLogOdds, DCF_MIN, label=('min DCF',title), color=color, linestyle='dashed')
     plt.legend()
     plt.xlabel("Prior-log-odds")
     plt.ylabel("DCF Value")

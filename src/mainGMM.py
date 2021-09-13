@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from GMM import GMMClass
 from dataset import load_db, NUM_CLASSES
-from MEASUREPrediction import MEASUREPrediction, showBayesPlot
+from MEASUREPrediction import MEASUREPrediction, recalScores, showBayesPlot
 from utils import split_K_folds, mrow, mcol
 from stats import gauss_data
 from PCA import PCA
@@ -43,6 +43,40 @@ def compute_GMM_LLR(D, L, G, alpha, gauss=False, model='MVG', PCAm=None):
     return S, L
 
 
+def compute_GMM_LLR_rec(D, L, G, alpha, pt, gauss=False, model='MVG', PCAm=None):
+    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
+    D = np.concatenate(D_SETS, axis=1)
+    L = np.concatenate(L_SETS, axis=0)
+
+    # PRE-PROCESSING
+    if gauss == True:
+        for i in range(K):
+            D_SETS[i] = gauss_data(D_SETS[i])
+
+    if PCAm != None:
+        for i in range(K):
+            D_SETS[i] = PCA(D_SETS[i], PCAm)
+
+    S = []
+    ST = []
+    for i in range(K):
+        DT = np.concatenate(D_SETS[:i] + D_SETS[i+1:], axis=1)
+        LT = np.concatenate(L_SETS[:i] + L_SETS[i+1:], axis=0)        
+        DE = D_SETS[i]
+        
+        GMMOBJ = GMMClass(DT, LT, G, threshold, alpha, psi, model)
+        GMMOBJ.computeGMMs()
+        
+        # Uncalibrated scores
+        S_i = GMMOBJ.computeLLR(DE)
+        S = np.hstack((S, S_i))
+
+        # Calibrated scores
+        S_train = GMMOBJ.computeLLR(DT)
+        ST_i = recalScores(S_train, LT, S_i, pt)
+        ST = np.hstack((ST, ST_i))
+
+    return ST, S, L
 
 
 def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
@@ -184,6 +218,50 @@ def main_BayesPlot():
     plt.show()
 
 
+def main_BayesPlot_calibrated():
+    D, L = load_db()
+
+    # MODEL
+    G = 512
+    alpha = 0.1
+    gauss = True
+    model = 'MVG'
+    PCAm = None
+    title = 'MVG Gaussianized 512G'
+
+    plt.figure()
+
+    # UNCALIBRATED
+    LLR, LTE = compute_GMM_LLR(D, L, G, alpha, gauss, model, PCAm)
+    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' UNCALIBRATED'), False, 'red')
+
+    # CALIBRATED
+    LLR, _, LTE = compute_GMM_LLR_rec(D, L, G, alpha, 0.5, gauss, model, PCAm)
+    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' CALIBRATED'), False, 'green')
+
+    plt.savefig('./src/plots/GMM/gmm_bayes_DCF_trainSet_MVG_GAU_512G_calibrated.png')
+    plt.show()
+
+def main_BayesPlot_calibrated_TCG8G_VS_MVG512G():
+    D, L = load_db()
+    alpha = 0.1
+
+    plt.figure()
+
+    # TCG Gaussianized 8G CALIBRATED
+    title = 'TCG Gaussianized 8G'
+    LLR, _, LTE = compute_GMM_LLR_rec(D, L, 8, alpha, 0.5, True, 'TCG')
+    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' CALIBRATED'), False, 'red')
+
+    # MVG Gaussianized 512G CALIBRATED
+    title = 'MVG Gaussianized 512G'
+    LLR, _, LTE = compute_GMM_LLR_rec(D, L, 512, alpha, 0.5, True, 'MVG')
+    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' CALIBRATED'), False, 'blue')
+
+    plt.savefig('./src/plots/GMM/gmm_bayes_DCF_trainSet_TCG8G_VS_MVG512G_calibrated.png')
+    plt.show()
+
+
 def main_comparison_EVAL_VAL():
     DTR, LTR = load_db(train=True)
     DTE, LTE = load_db(train=False)
@@ -194,7 +272,7 @@ def main_comparison_EVAL_VAL():
     gauss = True
     model = 'TCG'
     PCAm = None
-    title = 'TCG Gaussianized 512G'
+    title = 'TCG Gaussianized 8G'
 
     plt.figure()
 
@@ -215,7 +293,9 @@ if __name__ == '__main__':
     # main_find_best_G()
     # main_best_models()
     # main_BayesPlot()
-    main_comparison_EVAL_VAL()
+    # main_BayesPlot_calibrated()
+    main_BayesPlot_calibrated_TCG8G_VS_MVG512G()
+    # main_comparison_EVAL_VAL()
 
 
 '''
