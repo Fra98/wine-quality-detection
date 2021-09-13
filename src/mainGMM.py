@@ -79,6 +79,51 @@ def compute_GMM_LLR_rec(D, L, G, alpha, pt, gauss=False, model='MVG', PCAm=None)
     return ST, S, L
 
 
+
+def compute_GMM_LLR_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=False, model='MVG', PCAm=None):
+    # PRE-PROCESSING
+    if gauss == True:
+        DTR = gauss_data(DTR)
+        DTE = gauss_data(DTE)
+
+    if PCAm != None:
+        DTR = PCA(DTR, PCAm)
+        DTE = PCA(DTE, PCAm)
+
+    # TRAINING
+    GM = GMMClass(DTR, LTR, G, threshold, alpha, psi, model)
+    GM.computeGMMs()
+
+    # EVALUATION
+    S = GM.computeLLR(DTE)
+
+    return S, LTE
+
+
+def compute_GMM_LLR_EVAL_rec(DTR, LTR, DTE, LTE, G, alpha, pt, gauss=False, model='MVG', PCAm=None):
+    # PRE-PROCESSING
+    if gauss == True:
+        DTR = gauss_data(DTR)
+        DTE = gauss_data(DTE)
+
+    if PCAm != None:
+        DTR = PCA(DTR, PCAm)
+        DTE = PCA(DTE, PCAm)
+
+    # TRAINING
+    GM = GMMClass(DTR, LTR, G, threshold, alpha, psi, model)
+    GM.computeGMMs()
+
+    # Uncalibrated scores
+    S = GM.computeLLR(DTE)
+
+    # Calibrated scores
+    S_train = GM.computeLLR(DTR)
+    ST = recalScores(S_train, LTR, S, pt)
+
+    return ST, S, LTE
+
+
 def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
     S, L = compute_GMM_LLR(D, L, G, alpha, gauss, model, PCAm)
 
@@ -96,27 +141,6 @@ def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
     print(f'ActDCF: {DCFAct:.4f} -> {model} ({strgauss}) (p={p}) (alpha={alpha}) G={G}')
 
     return DCFMin
-
-def computeGMM_DCF_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=False, model='MVG', PCAm=None, title=''):
-    # PRE-PROCESSING
-    if gauss == True:
-        DTR = gauss_data(DTR)
-        DTE = gauss_data(DTE)
-
-    if PCAm != None:
-        DTR = PCA(DTR, PCAm)
-        DTE = PCA(DTE, PCAm)
-
-    # TRAINING
-    GM = GMMClass(DTR, LTR, G, threshold, alpha, psi, model)
-    GM.computeGMMs()
-
-    # EVALUATION
-    S = GM.computeLLR(DTE)
-    
-    minDCF, PI, MP, actDCF = showBayesPlot(S, LTE, NUM_CLASSES, title, False, 'red')
-    MP[0].showStatsByThres(PI, LTE, 2)
-    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
 
 
 def main_tuning_alpha():
@@ -231,13 +255,10 @@ def main_BayesPlot_calibrated():
 
     plt.figure()
 
-    # UNCALIBRATED
-    LLR, LTE = compute_GMM_LLR(D, L, G, alpha, gauss, model, PCAm)
-    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' UNCALIBRATED'), False, 'red')
+    LLR_Cal, LLR, LTE = compute_GMM_LLR_rec(D, L, G, alpha, 0.5, gauss, model, PCAm)
 
-    # CALIBRATED
-    LLR, _, LTE = compute_GMM_LLR_rec(D, L, G, alpha, 0.5, gauss, model, PCAm)
-    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' CALIBRATED'), False, 'green')
+    showBayesPlot(LLR, LTE, NUM_CLASSES, str(title + ' UNCALIBRATED'), False, 'red')
+    showBayesPlot(LLR_Cal, LTE, NUM_CLASSES, str(title + ' CALIBRATED'), False, 'green')
 
     plt.savefig('./src/plots/GMM/gmm_bayes_DCF_trainSet_MVG_GAU_512G_calibrated.png')
     plt.show()
@@ -277,8 +298,11 @@ def main_comparison_EVAL_VAL():
     plt.figure()
 
     print(title, 'EVAL')
-    computeGMM_DCF_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=gauss, model=model, PCAm=PCAm, title=(str(title+' [EVAL]')))
-    
+    LLR, LTE = compute_GMM_LLR_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=gauss, model=model, PCAm=PCAm)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [EVAL]'), False, 'red')
+    MP[0].showStatsByThres(PI, LTE, 2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
     print(title, "VAL:")
     LLR, LTE = compute_GMM_LLR(DTR, LTR, G, alpha, gauss=gauss, model=model)
     minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [VAL]'), False, 'blue')
@@ -294,8 +318,8 @@ if __name__ == '__main__':
     # main_best_models()
     # main_BayesPlot()
     # main_BayesPlot_calibrated()
-    main_BayesPlot_calibrated_TCG8G_VS_MVG512G()
-    # main_comparison_EVAL_VAL()
+    # main_BayesPlot_calibrated_TCG8G_VS_MVG512G()
+    main_comparison_EVAL_VAL()
 
 
 '''
