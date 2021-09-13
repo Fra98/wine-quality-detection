@@ -16,8 +16,27 @@ def computeDCFMin(S, L, p):
 
 def computeDCFActual(S, L, p):
     MP = MEASUREPrediction(p, 1.0, 1.0, S)
+    LTE = MP.computeOptDecision()
+    MP.showStats(LTE,L)
     return MP.getDCFNorm(L, db.NUM_CLASSES)
 
+def compute_LLR_LTE_eval(C, kf, ps, pt=-1.0,  gauss=False):
+    DTR, LTR = db.load_db(True)
+    DTE, LTE = db.load_db(False)
+
+    if gauss == True:
+        DTR = gauss_data(DTR)
+        DTE = gauss_data(DTE)
+
+    SVMObj = SVM.SVMKernClass(DTR, LTR, C, 1, kf, pt)
+    x0 = np.zeros(LTR.size)
+    SVMObj.computeResult(x0)
+    STE, _ = SVMObj.computeScore(DTE)
+    STR, _ = SVMObj.computeScore(DTR)
+    STEC = recalScores(STR, LTR, STE, ps)
+
+    return STEC, STE, LTE
+
 def compute_LLR_LTE(D, L, C, kf, gauss=False):
     D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
     D = np.concatenate(D_SETS, axis=1)
@@ -33,7 +52,7 @@ def compute_LLR_LTE(D, L, C, kf, gauss=False):
         LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
         DE = D_SETS[i]
 
-        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf) #0.5
+        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf)
         x0 = np.zeros(LT.size)
         SVMObj.computeResult(x0)
         S_i, _ = SVMObj.computeScore(DE)
@@ -41,31 +60,7 @@ def compute_LLR_LTE(D, L, C, kf, gauss=False):
 
     return S, L
 
-def compute_LLR_LTE(D, L, C, kf, gauss=False):
-    D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
-    D = np.concatenate(D_SETS, axis=1)
-    L = np.concatenate(L_SETS, axis=0)
-
-    if gauss == True:
-        for i in range(K):
-            D_SETS[i] = gauss_data(D_SETS[i])
-
-    S = []
-    for i in range(K):
-        DT = np.concatenate(D_SETS[:i] + D_SETS[i + 1:], axis=1)
-        LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
-        DE = D_SETS[i]
-
-        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf) #0.5
-        x0 = np.zeros(LT.size)
-        SVMObj.computeResult(x0)
-        S_i, _ = SVMObj.computeScore(DE)
-        S = np.hstack((S, S_i))
-
-    return S, L
-
-
-def compute_LLR_LTE_rec(D, L, C, kf, pt, gauss=False):
+def compute_LLR_LTE_rec(D, L, C, kf, ps, pt, gauss=False):
     D_SETS, L_SETS = split_K_folds(D, L, K, shuffle=True)
     D = np.concatenate(D_SETS, axis=1)
     L = np.concatenate(L_SETS, axis=0)
@@ -81,12 +76,12 @@ def compute_LLR_LTE_rec(D, L, C, kf, pt, gauss=False):
         LT = np.concatenate(L_SETS[:i] + L_SETS[i + 1:], axis=0)
         DE = D_SETS[i]
 
-        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf)  # 0.5
+        SVMObj = SVM.SVMKernClass(DT, LT, C, 1, kf, pt)
         x0 = np.zeros(LT.size)
         SVMObj.computeResult(x0)
         S_i, _ = SVMObj.computeScore(DE)
         S_Train, _ = SVMObj.computeScore(DT)
-        ST_i = recalScores(S_Train, LT, S_i, pt)
+        ST_i = recalScores(S_Train, LT, S_i, ps)
         S = np.hstack((S, S_i))
         ST = np.hstack((ST, ST_i))
 
@@ -130,11 +125,11 @@ def main_find_best_C_and_L(gauss=False):
 
     i = 0
     for C in Csub:
-        LLR, LTE = compute_LLR_LTE(D, L, C, kf1, gauss=gauss)
+        LLR, LTE = compute_LLR_LTE(D, L, C, kf1, gauss)
         minDCF1[i] = computeDCFMin(LLR, LTE, 0.5)
-        LLR, LTE = compute_LLR_LTE(D, L, C, kf2, gauss=gauss)
+        LLR, LTE = compute_LLR_LTE(D, L, C, kf2, gauss)
         minDCF2[i] = computeDCFMin(LLR, LTE, 0.5)
-        LLR, LTE = compute_LLR_LTE(D, L, C, kf3, gauss=gauss)
+        LLR, LTE = compute_LLR_LTE(D, L, C, kf3, gauss)
         minDCF3[i] = computeDCFMin(LLR, LTE, 0.5)
         i = i + 1
 
@@ -161,44 +156,71 @@ def main_print_DCFMin(C, kf, gauss=False):
     print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
     print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
 
-def main_print_DCF_recal(C, kf, pt, gauss=False):
+def main_print_DCFMin_eval(C, kf, ps, pt, gauss=False):
     D, L = db.load_db()
     Csub = np.logspace(-3, 3, 10)
     N = Csub.size
 
-    LLRC, LLR, LTE = compute_LLR_LTE_rec(D, L, C, kf, pt, gauss=gauss)
-    plt.figure()
-    showBayesPlot(LLRC, LTE, 2, 'Calibrated')
-    showBayesPlot(LLR, LTE, 2, 'Non Calibrated')
-    plt.show()
+    LLRC, LLR, LTE = compute_LLR_LTE_eval(C, kf, ps, pt, gauss=gauss)
+    #print("πtilde 0.1: ",computeDCFMin(LLR, LTE, 0.1))
+    #print("πtilde 0.5: ",computeDCFMin(LLR, LTE, 0.5))
+    #print("πtilde 0.9: ",computeDCFMin(LLR, LTE, 0.9))
 
-    print("Calibrated")
-    print("πtilde 0.1: ", computeDCFActual(LLRC, LTE, 0.1))
-    print("πtilde 0.5: ", computeDCFActual(LLRC, LTE, 0.5))
-    print("πtilde 0.9: ", computeDCFActual(LLRC, LTE, 0.9))
-    print("Non Calibrated")
-    print("πtilde 0.1: ", computeDCFActual(LLR, LTE, 0.1))
-    print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
-    print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
 
-def main_print_show_Bayes(C, kf, gauss=False):
+    print("πtilde 0.1 (cal): ", computeDCFActual(LLRC, LTE, 0.1))
+    print("πtilde 0.5 (cal): ", computeDCFActual(LLRC, LTE, 0.5))
+    print("πtilde 0.9 (cal): ", computeDCFActual(LLRC, LTE, 0.9))
+
+
+def main_print_DCF_recal(C, kf, ps, pt, gauss=False):
     D, L = db.load_db()
-    LLR, LTE = compute_LLR_LTE(D, L, C, kf, gauss=gauss)
+    Csub = np.logspace(-3, 3, 10)
+    N = Csub.size
+
+    LLRC_TR, LLR_TR, LTE_TR = compute_LLR_LTE_rec(D, L, C, kf, ps, pt, gauss=gauss)
+    LLRC_TE, LLR_TE, LTE_TE = compute_LLR_LTE_eval(C, kf, ps, pt, gauss=gauss)
+
     plt.figure()
-    showBayesPlot(LLR,LTE,2,'Gauss Data',fast=True)
+    showBayesPlot(LLRC_TR, LTE_TR, 2, 'SVM RBF [VAL] (Calibrated)', color='blue')
+    showBayesPlot(LLRC_TE, LTE_TE, 2, 'SVM RBF [EVAL] (Calibrated)', color='red')
     plt.show()
+
+    #print("Non Calibrated")
+    #print("πtilde 0.1: ", computeDCFActual(LLR, LTE, 0.1))
+    #print("πtilde 0.5: ", computeDCFActual(LLR, LTE, 0.5))
+    #print("πtilde 0.9: ", computeDCFActual(LLR, LTE, 0.9))
 
 if __name__ == "__main__":
+    '''
+    #find best C and l for the gauss / non - gauss datasets
     gauss=False
-    #main_find_best_C_and_L(gauss)
+    main_find_best_C_and_L(gauss)   
+        
+    #print different DCF min for validation dataset    
     gauss = True
     kf = SVM.RBF_F(np.exp(-1), 1.0)
     C=2
-
     #gauss = False
     #kf = SVM.RBF_F(np.exp(-3), 1.0)
     #C=10
     #main_print_DCFMin(C, kf, gauss)
-    pt = 0.5  #di train
-    main_print_DCF_recal(C,kf, pt=pt, gauss=gauss)
-    #main_print_show_Bayes(C, kf, gauss)
+        
+    #recalibration time!
+    #pt = 0.5  #di train
+    #main_print_DCF_recal(C,kf, pt=pt, gauss=gauss)
+    '''
+
+    #print different DCF min for evaluation dataset
+    gauss = True
+    kf = SVM.RBF_F(np.exp(-1), 1.0)
+    C=2    
+    '''
+    gauss = False
+    kf = SVM.RBF_F(np.exp(-3), 1.0)
+    C=10
+    '''
+    pt = -1
+    ps = 0.5
+    #main_print_DCFMin_eval(C, kf, ps, pt, gauss)
+    main_print_DCF_recal(C, kf, ps, pt, gauss=gauss)
+
