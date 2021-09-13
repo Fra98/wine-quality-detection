@@ -3,12 +3,13 @@ import numpy as np
 from GMM import GMMClass
 from dataset import load_db, NUM_CLASSES
 from MEASUREPrediction import MEASUREPrediction, showBayesPlot
-from utils import split_K_folds
+from utils import split_K_folds, mrow, mcol
 from stats import gauss_data
 from PCA import PCA
+from LOGRegression import LOGREGClass
 
 # Fixed paramaters 
-K = 5       # Number of K-folds
+K = 5                       # Number of K-folds
 threshold = 10**(-6)
 psi = 0.01
 
@@ -42,12 +43,15 @@ def compute_GMM_LLR(D, L, G, alpha, gauss=False, model='MVG', PCAm=None):
     return S, L
 
 
+
+
 def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
     S, L = compute_GMM_LLR(D, L, G, alpha, gauss, model, PCAm)
-    
+
     MP = MEASUREPrediction(p, 1.0, 1.0, S)
     MP.computeDCF(L, NUM_CLASSES)
     _, DCFMin = MP.getDCFMin()
+    DCFAct = MP.getDCFNorm(L, NUM_CLASSES)
 
     if gauss:
         strgauss = 'Gau'
@@ -55,8 +59,31 @@ def compute_GMM_DCFMin(D, L, p, G, alpha, gauss=False, model='MVG', PCAm=None):
         strgauss = 'Raw'
 
     print(f'MinDCF: {DCFMin:.4f} -> {model} ({strgauss}) (p={p}) (alpha={alpha}) G={G}')
+    print(f'ActDCF: {DCFAct:.4f} -> {model} ({strgauss}) (p={p}) (alpha={alpha}) G={G}')
 
     return DCFMin
+
+def computeGMM_DCF_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=False, model='MVG', PCAm=None, title=''):
+    # PRE-PROCESSING
+    if gauss == True:
+        DTR = gauss_data(DTR)
+        DTE = gauss_data(DTE)
+
+    if PCAm != None:
+        DTR = PCA(DTR, PCAm)
+        DTE = PCA(DTE, PCAm)
+
+    # TRAINING
+    GM = GMMClass(DTR, LTR, G, threshold, alpha, psi, model)
+    GM.computeGMMs()
+
+    # EVALUATION
+    S = GM.computeLLR(DTE)
+    
+    minDCF, PI, MP, actDCF = showBayesPlot(S, LTE, NUM_CLASSES, title, False, 'red')
+    MP[0].showStatsByThres(PI, LTE, 2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
 
 def main_tuning_alpha():
     D, L = load_db()
@@ -129,12 +156,12 @@ def main_best_models():
     alpha = 0.1
     
     for p in [0.5, 0.1, 0.9]:
+        compute_GMM_DCFMin(D, L, p, 512, alpha, True, 'MVG',) 
         compute_GMM_DCFMin(D, L, p, 8, alpha, True, 'TCG')
-        compute_GMM_DCFMin(D, L, p, 4, alpha, True, 'MVG')
 
 
-def main_BayesPlot(train=True):
-    D, L = load_db(train)
+def main_BayesPlot():
+    D, L = load_db()
     alpha = 0.1
 
     plt.figure()
@@ -142,39 +169,61 @@ def main_BayesPlot(train=True):
     # 1 TCG Gaussianized 8G
     print("TCG Gau 8G (alpha=0.1):")
     LLR, LTE = compute_GMM_LLR(D, L, 8, alpha, True, 'TCG')
-    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "TCG Gaussianized 8G (alpha=0.1)", False)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "TCG Gaussianized 8G (alpha=0.1)", False, 'red')
     MP[0].showStatsByThres(PI,LTE,2)
     print("minDCF:", minDCF, " | actDCF:", actDCF)
 
-    # 2 MVG Gaussianized 4G
-    print("MVG Gau 4G (alpha=0.1):")
-    LLR, LTE = compute_GMM_LLR(D, L, 4, alpha, True, 'MVG')
-    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 4G (alpha=0.1)", False)
+    # 2 MVG Gaussianized 512G
+    print("MVG Gau 512G (alpha=0.1):")
+    LLR, LTE = compute_GMM_LLR(D, L, 512, alpha, True, 'MVG')
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, "MVG Gaussianized 512G (alpha=0.1)", False, 'blue')
     MP[0].showStatsByThres(PI,LTE,2)
     print("minDCF:", minDCF, " | actDCF:", actDCF)
 
-    if train:
-        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_trainSet.png')
-    else:
-        plt.savefig('./src/plots/GMM/GMM_bayes_DCF_testSet.png')
+    plt.savefig('./src/plots/GMM/gmm_bayes_DCF_trainSet.png')
     plt.show()
 
+
+def main_comparison_EVAL_VAL():
+    DTR, LTR = load_db(train=True)
+    DTE, LTE = load_db(train=False)
+
+    # MODEL
+    G = 8
+    alpha = 0.1
+    gauss = True
+    model = 'TCG'
+    PCAm = None
+    title = 'TCG Gaussianized 512G'
+
+    plt.figure()
+
+    print(title, 'EVAL')
+    computeGMM_DCF_EVAL(DTR, LTR, DTE, LTE, G, alpha, gauss=gauss, model=model, PCAm=PCAm, title=(str(title+' [EVAL]')))
+    
+    print(title, "VAL:")
+    LLR, LTE = compute_GMM_LLR(DTR, LTR, G, alpha, gauss=gauss, model=model)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [VAL]'), False, 'blue')
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+    plt.savefig('./src/plots/GMM/gmm_bayes_TCG_GAU_8G_VAL_vs_EVAL.png')
+    plt.show()
 
 if __name__ == '__main__':
     # main_tuning_alpha()
     # main_find_best_G()
     # main_best_models()
-    main_BayesPlot()
+    # main_BayesPlot()
+    main_comparison_EVAL_VAL()
+
 
 '''
 # BEST MODELS
 
-(TCG) Gau -> minDCF = 0.2871125611745514, G=8
-(MVG) Gau -> minDCF = 0.2911908646003263, G=4
-
-All models permorm better at middle-low values of G (4,8,16).
-The Naive Bayes assumption doesn't perform well both with or without tied covariance.
-Tied covariance models perform better with Gaussianization on middle-low values of G. With higher
-values Minimum DCF tend to increase compared to raw models.
+1) (MVG) Gau -> minDCF = 0.274, G=512
+2) (TCG) Gau -> minDCF = 0.280, G=8
 
 '''
+
+
