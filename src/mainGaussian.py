@@ -173,16 +173,17 @@ def main_evaluation():
     plt.figure()
 
     print('MVG Raw')
-    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=False, model='MVG', PCAm=None, title='MVG Raw')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, gauss=False, model='MVG', PCAm=None, title='MVG Raw')
     
     print('TCG Raw')
-    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=False, model='TCG', PCAm=None, title='TCG Raw')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, gauss=False, model='TCG', PCAm=None, title='TCG Raw')
 
     print('MVG Gaussianized')
-    computeDCF_EVAL(DTR, LTR, DTE, LTE, pi, gauss=True, model='MVG', PCAm=None, title='MVG Gaussianized')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, gauss=True, model='MVG', PCAm=None, title='MVG Gaussianized')
     
     plt.savefig('./src/plots/Gaussian/Gaussian_bayes_DCF_evalSet.png')
     
+
 def main_comparison_EVAL_VAL():
     DTR, LTR = db.load_db(train=True)
     DTE, LTE = db.load_db(train=False)
@@ -190,7 +191,7 @@ def main_comparison_EVAL_VAL():
     plt.figure()
     
     print('TCG Raw EVAL')
-    computeDCF_EVAL(DTR, LTR, DTE, LTE, None, gauss=False, model='TCG', PCAm=None, title='TCG Raw EVAL')
+    computeDCF_EVAL(DTR, LTR, DTE, LTE, gauss=False, model='TCG', PCAm=None, title='TCG Raw EVAL')
     
     print("TCG Raw VAL:")
     LLR, LTE = compute_LLR_Gaussian(DTR, LTR, gauss=False, model='TCG')

@@ -34,7 +34,7 @@ def GMM_logpdf(X, gmm):
         s = np.exp(s)    
         pdf += s
     
-    return pdf
+    return np.log(pdf)
 
 def GMM_joint_density(X, gmm, M):
     S = []
