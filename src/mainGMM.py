@@ -287,13 +287,22 @@ def main_comparison_EVAL_VAL():
     DTR, LTR = load_db(train=True)
     DTE, LTE = load_db(train=False)
 
-    # MODEL
+    # MODELS
+
     G = 8
     alpha = 0.1
     gauss = True
     model = 'TCG'
     PCAm = None
     title = 'TCG Gaussianized 8G'
+
+    # G = 512
+    # alpha = 0.1
+    # gauss = True
+    # model = 'MVG'
+    # PCAm = None
+    # title = 'MVG Gaussianized 512G'
+
 
     plt.figure()
 
@@ -304,13 +313,57 @@ def main_comparison_EVAL_VAL():
     print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
 
     print(title, "VAL:")
-    LLR, LTE = compute_GMM_LLR(DTR, LTR, G, alpha, gauss=gauss, model=model)
+    LLR, LTE = compute_GMM_LLR(DTR, LTR, G, alpha, gauss=gauss, model=model, PCAm=PCAm)
     minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [VAL]'), False, 'blue')
     MP[0].showStatsByThres(PI,LTE,2)
     print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
 
     plt.savefig('./src/plots/GMM/gmm_bayes_TCG_GAU_8G_VAL_vs_EVAL.png')
+    # plt.savefig('./src/plots/GMM/gmm_bayes_MVG_GAU_512G_VAL_vs_EVAL.png')
     plt.show()
+
+
+def main_comparison_EVAL_VAL_calibrated():
+    DTR, LTR = load_db(train=True)
+    DTE, LTE = load_db(train=False)
+
+    # MODELS
+
+    G = 8
+    alpha = 0.1
+    gauss = True
+    model = 'TCG'
+    PCAm = None
+    title = 'TCG Gauss 8G'
+
+    # G = 512
+    # alpha = 0.1
+    # gauss = True
+    # model = 'MVG'
+    # PCAm = None
+    # title = 'MVG Gauss 512G'
+
+    # Recalibration
+    pt = 0.5
+
+    plt.figure()
+
+    print(title, 'EVAL')
+    LLR, _, LTE = compute_GMM_LLR_EVAL_rec(DTR, LTR, DTE, LTE, G, alpha, pt, gauss=gauss, model=model, PCAm=PCAm)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [EVAL] (calibrated)'), False, 'red')
+    MP[0].showStatsByThres(PI, LTE, 2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+    print(title, "VAL:")
+    LLR, _, LTE = compute_GMM_LLR_rec(DTR, LTR, G, alpha, pt, gauss=gauss, model=model, PCAm=PCAm)
+    minDCF, PI, MP, actDCF = showBayesPlot(LLR, LTE, NUM_CLASSES, str(title+' [VAL] (calibrated)'), False, 'blue')
+    MP[0].showStatsByThres(PI,LTE,2)
+    print("minDCF:", minDCF, " | actDCF:", actDCF, "| PI:", PI)
+
+    plt.savefig('./src/plots/GMM/gmm_bayes_TCG_GAU_8G_VAL_vs_EVAL_calibrated.png')
+    # plt.savefig('./src/plots/GMM/gmm_bayes_MVG_GAU_512G_VAL_vs_EVAL_calibrated.png')
+    plt.show()
+
 
 if __name__ == '__main__':
     # main_tuning_alpha()
@@ -319,7 +372,8 @@ if __name__ == '__main__':
     # main_BayesPlot()
     # main_BayesPlot_calibrated()
     # main_BayesPlot_calibrated_TCG8G_VS_MVG512G()
-    main_comparison_EVAL_VAL()
+    # main_comparison_EVAL_VAL()
+    main_comparison_EVAL_VAL_calibrated()
 
 
 '''
