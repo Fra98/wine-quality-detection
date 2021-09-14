@@ -28,14 +28,3 @@ def LDA(D, L, K, m):
     DP = np.dot(U.T, D)     # dim = mxN
 
     return DP
-
-
-def main():
-    D, L = load_db()
-
-    # LDA: computing LDA for every m (< K) -> binary problem: only 1 discriminant direction
-    DP = LDA(D, L, NUM_CLASSES, 1)
-
-
-if __name__ == "__main__":
-    main()

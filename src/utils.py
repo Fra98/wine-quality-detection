@@ -1,5 +1,4 @@
 import numpy as np
-from train import TRAINModel
 
 def mcol(v):
     return v.reshape((v.size, 1))
@@ -49,7 +48,7 @@ def split_K_folds(D, L, K, seed=0, shuffle=False):
     return D_SETS, L_SETS
 
 
-def K_fold_cross_validation(D, L, K, modelName):
+def K_fold_cross_validation(D, L, K, trainFunc):
     D_SETS, L_SETS = split_K_folds(D, L, K)
 
     total_correct = 0
@@ -60,9 +59,8 @@ def K_fold_cross_validation(D, L, K, modelName):
         DTE = D_SETS[i]
         LTE = L_SETS[i]
         
-        ## TRAINING: compute labels for evaluation test
-        TM = TRAINModel(DTR, LTR, DTE, modelName)
-        CLTE = TM.run()
+        ## Compute labels for evaluation test
+        CLTE = trainFunc(DTR, LTR, DTE)
 
         ## EVALUATION:
         EVAL = np.equal(CLTE, LTE)            # array of booleans -> DTE_labels[i] == LTE[i]
@@ -81,9 +79,9 @@ def K_fold_cross_validation(D, L, K, modelName):
     return error_rate
 
 
-def leave_one_out(D, L, modelName):
+def leave_one_out(D, L, trainFunc):
     K = L.size
-    error_rate = K_fold_cross_validation(D, L, K, modelName)
+    error_rate = K_fold_cross_validation(D, L, K, trainFunc)
 
     return error_rate
 
