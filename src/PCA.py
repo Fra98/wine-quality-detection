@@ -26,23 +26,3 @@ def PCA(D, m):
 	DP = np.dot(P.T, D)     # dim = mxN
 
 	return DP
-
-def PCA_all(D):
-    n = D.shape[0]	# number of original dimensions
-    listDP = []
-
-    for m in range(1, n):	# compute PCA for every dimension m < n
-        DP_m = PCA(D, m)
-        listDP.append(DP_m)
-    
-    return listDP
-
-
-def main():
-	D, L = load_db()
-
-	# PCA: computing and plotting all DP for every m (< n)
-	listDP = PCA_all(D) # index+1 = number of dimension
-
-if __name__ == "__main__":
-    main()
