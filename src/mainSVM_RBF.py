@@ -162,9 +162,9 @@ def main_print_DCFMin_eval(C, kf, ps, pt, gauss=False):
     N = Csub.size
 
     LLRC, LLR, LTE = compute_LLR_LTE_eval(C, kf, ps, pt, gauss=gauss)
-    #print("πtilde 0.1: ",computeDCFMin(LLR, LTE, 0.1))
-    #print("πtilde 0.5: ",computeDCFMin(LLR, LTE, 0.5))
-    #print("πtilde 0.9: ",computeDCFMin(LLR, LTE, 0.9))
+    print("πtilde 0.1: ",computeDCFMin(LLR, LTE, 0.1))
+    print("πtilde 0.5: ",computeDCFMin(LLR, LTE, 0.5))
+    print("πtilde 0.9: ",computeDCFMin(LLR, LTE, 0.9))
 
 
     print("πtilde 0.1 (cal): ", computeDCFActual(LLRC, LTE, 0.1))
